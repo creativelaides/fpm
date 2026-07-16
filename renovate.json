@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on Monday"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on Monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Auto-merge dev dependencies (Node tooling)",
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "schedule": ["before 6am on Monday"]
+    },
+    {
+      "description": "Group Rust dependencies",
+      "matchManagers": ["cargo"],
+      "groupName": "Rust dependencies",
+      "schedule": ["before 6am on Monday"]
+    },
+    {
+      "description": "Auto-merge Rust patch updates",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "schedule": ["before 6am on Monday"]
+    }
+  ]
+}
