@@ -1,0 +1,118 @@
+name: Windows Compatibility
+
+# Windows compatibility testing — runs fpm against real PyManager on
+# multiple Windows versions. Separated from CI (fmt/clippy/unit tests)
+# so the main CI stays fast for contributors.
+#
+# This workflow installs PyManager + Python on each runner, builds fpm,
+# and runs the #[ignore] integration tests that require a real `py.exe`.
+#
+# Future contributors: copy this pattern for linux.yml or macos.yml
+# when adding support for other platforms.
+
+on:
+  # Run on releases and tags (not every PR — this is heavier)
+  release:
+    types: [published]
+  push:
+    tags: ['v*']
+  # Manual trigger
+  workflow_dispatch:
+  # Nightly sanity check
+  schedule:
+    - cron: '0 6 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  compatibility:
+    name: Windows ${{ matrix.os-label }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Server 2022 — shares kernel base with Windows 11
+          - os: windows-latest
+            os-label: 'Server 2022'
+          # Server 2019 — shares kernel base with Windows 10 1809
+          - os: windows-2019
+            os-label: 'Server 2019'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.96.0
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install PyManager (Python launcher)
+        shell: pwsh
+        run: |
+          # Install Python which includes the py launcher
+          winget install Python.Python.3.14 --accept-package-agreements --accept-source-agreements
+          # Refresh PATH for the current session
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          Write-Host "PATH: $env:PATH"
+          # Verify py.exe is available
+          py --version
+          py list
+
+      - name: Install test Python versions
+        shell: pwsh
+        run: |
+          py install 3.13
+          py list
+
+      - name: Build fpm
+        run: cargo build --release
+
+      - name: Add fpm to PATH
+        shell: pwsh
+        run: |
+          $fpmDir = Join-Path $PWD "target\release"
+          echo $fpmDir >> $env:GITHUB_PATH
+
+      - name: Run unit tests
+        run: cargo test
+
+      - name: Run integration tests (including ignored)
+        shell: pwsh
+        run: |
+          # Run all tests including #[ignore] ones that need real py.exe
+          cargo test -- --ignored --nocapture
+
+      - name: Smoke test — fpm list
+        shell: pwsh
+        run: fpm list
+
+      - name: Smoke test — fpm current
+        shell: pwsh
+        run: fpm current
+
+      - name: Smoke test — fpm env
+        shell: pwsh
+        run: fpm env --shell powershell
+
+      - name: Smoke test — fpm use
+        shell: pwsh
+        run: |
+          fpm env --shell powershell | Out-String | Invoke-Expression
+          fpm use 3.13
+          fpm current
+          python --version
+
+      - name: Smoke test — pass-through
+        shell: pwsh
+        run: fpm -0p
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os-label }}
+          path: |
+            target/release/fpm.exe
+            Cargo.lock
