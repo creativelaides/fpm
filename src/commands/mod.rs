@@ -9,11 +9,12 @@
 // Each submodule implements one fpm subcommand. The dispatch from clap args to
 // the correct handler lives in `main.rs`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::config;
 use crate::error::FpmError;
 use crate::pymanager::PyManager;
+use crate::shim;
 
 pub mod current;
 pub mod default;
@@ -62,6 +63,66 @@ impl CommandContext {
             session_dir,
         })
     }
+}
+
+/// Activates a Python runtime for the current session.
+///
+/// Shared session-activation sequence used by `fpm use` and `fpm default` so
+/// the two commands cannot drift (spec: python-version-switching — "Session
+/// Activation Effects Are Reusable"). Performs the following steps:
+///
+/// 1. Resolves the executable path for `tag` via the PyManager (rejects
+///    uninstalled tags with `FpmError::VersionNotInstalled` before any side
+///    effect).
+/// 2. Derives the install directory as the parent of the resolved exe.
+/// 3. Canonicalizes the install directory (for stable junction comparison).
+/// 4. Retargets the per-session shim junction at `session_dir` to the
+///    install dir.
+/// 5. Sets `PYTHON_MANAGER_DEFAULT` to `tag` for the current process.
+///
+/// `silent_if_unchanged` is `fpm use`-specific and stays in `use_cmd`; this
+/// helper does only the resolve → derive → retarget → set env sequence.
+///
+/// # Parameters
+/// - `pymanager`: the PyManager client (real or mock) used to resolve the exe.
+/// - `tag`: the runtime tag to activate, e.g. `"3.14-64"`.
+/// - `session_dir`: the per-session multishell directory (from
+///   `FPM_MULTISHELL_PATH`). The caller is responsible for ensuring it is
+///   present and valid; `fpm default` checks for it before any write so the
+///   activation path only runs when a session exists.
+///
+/// # Returns
+/// The canonicalized install directory so each caller can print its own
+/// message (`fpm use` prints "Using Python {tag}", `fpm default` prints
+/// "Default set to {tag}; session activated").
+pub fn activate_session<M: crate::pymanager::PyManagerOps>(
+    pymanager: &mut M,
+    tag: &str,
+    session_dir: &Path,
+) -> Result<PathBuf, FpmError> {
+    // 1. Resolve the exe path for this tag (rejects uninstalled tags first).
+    let exe_path = pymanager.resolve_exe(tag)?;
+
+    // 2. Derive the install directory (parent of the exe).
+    let install_dir = exe_path.parent().ok_or_else(|| {
+        FpmError::ShimError(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "resolved exe has no parent directory",
+        ))
+    })?;
+
+    // 3. Canonicalize install_dir for comparison / stable junction target.
+    let canonical_install = install_dir
+        .canonicalize()
+        .unwrap_or_else(|_| install_dir.to_path_buf());
+
+    // 4. Retarget the junction to the install directory.
+    shim::retarget(session_dir, &canonical_install)?;
+
+    // 5. Set PYTHON_MANAGER_DEFAULT in-process.
+    std::env::set_var(config::PYTHON_MANAGER_DEFAULT_ENV, tag);
+
+    Ok(canonical_install)
 }
 
 #[cfg(test)]
