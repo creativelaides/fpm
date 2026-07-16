@@ -15,7 +15,10 @@ use crate::config;
 use crate::error::FpmError;
 use crate::pymanager::PyManager;
 
+pub mod current;
+pub mod default;
 pub mod install;
+pub mod list;
 pub mod passthrough;
 
 /// Shared context passed to every command handler.
