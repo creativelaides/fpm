@@ -8,6 +8,7 @@
 mod config;
 mod error;
 mod pymanager;
+mod shim;
 mod version_file;
 
 fn main() {
