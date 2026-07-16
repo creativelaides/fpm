@@ -46,11 +46,11 @@ Chain strategy: pending
 - [x] 2.2 Unit tests in `src/pymanager.rs`: JSON parse from canned fixture, malformed JSON error, default read/write key preservation, missing pymanager.json creation. Spec: pymanager-delegation Parse/Default. Deps: 2.1. ~80 lines.
 - [x] 2.3 Create `src/version_file.rs`: `resolve(cwd)` upward walk, `.python-version` parser (comments/blanks/empty), `pyproject.toml` parser (toml+pep440_rs, requires-python + tool.poetry), specifier reduction vs cached runtime list (highest match). Spec: version-file-resolution (all reqs). Deps: 2.1. ~140 lines.
 - [x] 2.4 Unit tests in `src/version_file.rs`: fixture trees for cwd-wins, ancestor, no-file, comment/blank, empty file, specifier matching (>=, ~, ==.*), no-satisfies, malformed toml skip, .python-version precedence. Spec: version-file-resolution. Deps: 2.3. ~90 lines.
-- [ ] 2.5 Create `src/shim.rs`: `create_session_dir(fpm_dir)` (`<pid>_<random>`), `retarget(session_dir, install_dir)` (remove_dir + junction::create, NOT remove_dir_all), `current_target(session_dir)` (junction::get_target, canonicalize). Spec: python-version-switching, powershell-shell-integration. Deps: 1.2. ~80 lines.
-- [ ] 2.6 Unit tests in `src/shim.rs`: retarget+current_target round-trip on tempfile dirs, unique session ids across calls. Spec: powershell-shell-integration Session ID Unique. Deps: 2.5. ~50 lines.
-- [ ] 2.7 Create `src/shell/mod.rs`: `Shell` trait `render(session_dir, use_on_cd) -> String`. Spec: powershell-shell-integration. Deps: none. ~20 lines.
-- [ ] 2.8 Create `src/shell/powershell.rs`: script generator — `$env:FPM_DIR`, PATH prepend, `FPM_MULTISHELL_PATH`, `Set-Location` hook (use-on-cd → `fpm use --silent-if-unchanged`), `PowerShell.Exiting` cleanup hook. Spec: powershell-shell-integration (all reqs). Deps: 2.7. ~100 lines.
-- [ ] 2.9 Unit tests in `src/shell/powershell.rs`: output contains expected env vars, use-on-cd emits Set-Location override, no use-on-cd omits hook, exit cleanup present. Spec: powershell-shell-integration. Deps: 2.8. ~40 lines.
+- [x] 2.5 Create `src/shim.rs`: `create_session_dir(fpm_dir)` (`<pid>_<random>`), `retarget(session_dir, install_dir)` (remove_dir + junction::create, NOT remove_dir_all), `current_target(session_dir)` (junction::get_target, canonicalize). Spec: python-version-switching, powershell-shell-integration. Deps: 1.2. ~80 lines.
+- [x] 2.6 Unit tests in `src/shim.rs`: retarget+current_target round-trip on tempfile dirs, unique session ids across calls. Spec: powershell-shell-integration Session ID Unique. Deps: 2.5. ~50 lines.
+- [x] 2.7 Create `src/shell/mod.rs`: `Shell` trait `render(session_dir, use_on_cd) -> String`. Spec: powershell-shell-integration. Deps: none. ~20 lines.
+- [x] 2.8 Create `src/shell/powershell.rs`: script generator — `$env:FPM_DIR`, PATH prepend, `FPM_MULTISHELL_PATH`, `Set-Location` hook (use-on-cd → `fpm use --silent-if-unchanged`), `PowerShell.Exiting` cleanup hook. Spec: powershell-shell-integration (all reqs). Deps: 2.7. ~100 lines.
+- [x] 2.9 Unit tests in `src/shell/powershell.rs`: output contains expected env vars, use-on-cd emits Set-Location override, no use-on-cd omits hook, exit cleanup present. Spec: powershell-shell-integration. Deps: 2.8. ~40 lines.
 
 ## Phase 3: Commands
 
