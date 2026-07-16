@@ -33,6 +33,8 @@ pub struct CommandContext {
     /// fpm data directory (FPM_DIR or %LocalAppData%\fpm).
     pub fpm_dir: PathBuf,
     /// Path to pymanager.json (%AppData%\Python\pymanager.json).
+    /// Stored for commands that may need direct config access.
+    #[allow(dead_code)]
     pub pymanager_json_path: PathBuf,
     /// PyManager client — lazily spawns `py` and caches results.
     pub pymanager: PyManager,

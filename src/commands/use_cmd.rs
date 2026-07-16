@@ -95,6 +95,7 @@ pub fn run<M: PyManagerOps>(
 ///
 /// Returns `FpmError::ShimError` if the env var is not set (fpm use only works
 /// inside an fpm-integrated shell).
+#[allow(dead_code)]
 pub fn session_dir_from_env() -> Result<PathBuf, FpmError> {
     std::env::var_os(config::FPM_MULTISHELL_PATH_ENV)
         .map(PathBuf::from)

@@ -61,6 +61,7 @@ pub trait PyManagerOps {
     fn write_default(&mut self, tag: &str) -> Result<(), FpmError>;
 
     /// Spawns `py install <tag>` and returns the child exit code.
+    #[allow(dead_code)]
     fn install(&mut self, tag: &str) -> Result<i32, FpmError>;
 }
 
@@ -155,6 +156,7 @@ impl PyManagerOps for PyManager {
 }
 
 /// Mock PyManager for unit tests. Returns canned data without spawning `py`.
+#[allow(dead_code)]
 pub struct MockPyManager {
     /// Canned runtimes returned by `list_runtimes`.
     pub runtimes: Vec<Runtime>,
@@ -164,6 +166,7 @@ pub struct MockPyManager {
 
 impl MockPyManager {
     /// Creates a mock with the given runtimes and config path.
+    #[allow(dead_code)]
     pub fn new(runtimes: Vec<Runtime>, config_path: PathBuf) -> Self {
         MockPyManager {
             runtimes,
