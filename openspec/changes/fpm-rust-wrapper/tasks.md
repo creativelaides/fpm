@@ -54,19 +54,19 @@ Chain strategy: pending
 
 ## Phase 3: Commands
 
-- [ ] 3.1 Create `src/commands/mod.rs`: `Context` (config, pymanager, session_dir from FPM_MULTISHELL_PATH), dispatch helper. Spec: fpm-core. Deps: 2.1. ~40 lines.
-- [ ] 3.2 Create `src/commands/passthrough.rs`: spawn `py.exe` with all args verbatim, inherit stdio, propagate exit code; py missing → PyNotFound. Spec: fpm-core Pass-through. Deps: 3.1. ~30 lines.
-- [ ] 3.3 Create `src/commands/install.rs`: spawn `py install <tag>`, stream stdout/stderr, propagate exit code. Spec: pymanager-delegation install. Deps: 3.1. ~30 lines.
-- [ ] 3.4 Create `src/commands/list.rs`: call `list_runtimes()`, render table (version, tag, path, default marker). Spec: fpm-core, pymanager-delegation. Deps: 3.1. ~50 lines.
-- [ ] 3.5 Create `src/commands/current.rs`: read `PYTHON_MANAGER_DEFAULT` or `default_tag`, spawn `py -V` for active version. Spec: pymanager-delegation current. Deps: 3.1. ~40 lines.
-- [ ] 3.6 Create `src/commands/default.rs`: read/print `default_tag` (no arg), write `default_tag` preserving other keys (with arg), create file if missing. Spec: pymanager-delegation default. Deps: 3.1. ~50 lines.
-- [ ] 3.7 Create `src/commands/env_cmd.rs`: `--shell powershell [--use-on-cd]` → create session dir, render shell script to stdout. Spec: powershell-shell-integration. Deps: 2.8,3.1. ~40 lines.
-- [ ] 3.8 Create `src/commands/use_cmd.rs`: resolve version (explicit or version_file::resolve), `--silent-if-unchanged` (compare canonical junction target vs install dir, suppress stdout if equal), retarget junction, set `PYTHON_MANAGER_DEFAULT`, print "Using Python X". Spec: python-version-switching (all reqs). Deps: 2.1,2.3,2.5,3.1. ~70 lines.
+- [x] 3.1 Create `src/commands/mod.rs`: `Context` (config, pymanager, session_dir from FPM_MULTISHELL_PATH), dispatch helper. Spec: fpm-core. Deps: 2.1. ~40 lines.
+- [x] 3.2 Create `src/commands/passthrough.rs`: spawn `py.exe` with all args verbatim, inherit stdio, propagate exit code; py missing → PyNotFound. Spec: fpm-core Pass-through. Deps: 3.1. ~30 lines.
+- [x] 3.3 Create `src/commands/install.rs`: spawn `py install <tag>`, stream stdout/stderr, propagate exit code. Spec: pymanager-delegation install. Deps: 3.1. ~30 lines.
+- [x] 3.4 Create `src/commands/list.rs`: call `list_runtimes()`, render table (version, tag, path, default marker). Spec: fpm-core, pymanager-delegation. Deps: 3.1. ~50 lines.
+- [x] 3.5 Create `src/commands/current.rs`: read `PYTHON_MANAGER_DEFAULT` or `default_tag`, spawn `py -V` for active version. Spec: pymanager-delegation current. Deps: 3.1. ~40 lines.
+- [x] 3.6 Create `src/commands/default.rs`: read/print `default_tag` (no arg), write `default_tag` preserving other keys (with arg), create file if missing. Spec: pymanager-delegation default. Deps: 3.1. ~50 lines.
+- [x] 3.7 Create `src/commands/env_cmd.rs`: `--shell powershell [--use-on-cd]` → create session dir, render shell script to stdout. Spec: powershell-shell-integration. Deps: 2.8,3.1. ~40 lines.
+- [x] 3.8 Create `src/commands/use_cmd.rs`: resolve version (explicit or version_file::resolve), `--silent-if-unchanged` (compare canonical junction target vs install dir, suppress stdout if equal), retarget junction, set `PYTHON_MANAGER_DEFAULT`, print "Using Python X". Spec: python-version-switching (all reqs). Deps: 2.1,2.3,2.5,3.1. ~70 lines.
 
 ## Phase 4: CLI Wiring
 
-- [ ] 4.1 Create `src/cli.rs`: clap derive `Cli`, `Commands` enum (Use,List,Current,Default,Env,Install), `--shell`, `--use-on-cd`, `--silent-if-unchanged` flags. Spec: fpm-core Subcommand Routing. Deps: none. ~50 lines.
-- [ ] 4.2 Rewrite `src/main.rs`: parse args, dispatch recognized subcommand, detect unrecognized first token → passthrough, `--version` via clap cargo feature, FpmError→exit code mapping. Spec: fpm-core (all reqs). Deps: 4.1, all Phase 3. ~30 lines.
+- [x] 4.1 Create `src/cli.rs`: clap derive `Cli`, `Commands` enum (Use,List,Current,Default,Env,Install), `--shell`, `--use-on-cd`, `--silent-if-unchanged` flags. Spec: fpm-core Subcommand Routing. Deps: none. ~50 lines.
+- [x] 4.2 Rewrite `src/main.rs`: parse args, dispatch recognized subcommand, detect unrecognized first token → passthrough, `--version` via clap cargo feature, FpmError→exit code mapping. Spec: fpm-core (all reqs). Deps: 4.1, all Phase 3. ~30 lines.
 
 ## Phase 5: Integration Tests
 
