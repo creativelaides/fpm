@@ -70,11 +70,11 @@ Chain strategy: pending
 
 ## Phase 5: Integration Tests
 
-- [ ] 5.1 `tests/cli_dispatch.rs` (assert_cmd): `fpm --version` prints crate version, `fpm --help` lists subcommands exit 0, recognized subcommand routes. Spec: fpm-core Subcommand Routing. Deps: 4.2. ~60 lines.
-- [ ] 5.2 `tests/passthrough.rs` `#[ignore]`: forwards args to py verbatim, propagates exit code, py missing → non-zero + stderr. Spec: fpm-core Pass-through. Deps: 4.2. ~40 lines.
-- [ ] 5.3 `tests/env_cmd.rs`: `fpm env --shell powershell` with temp FPM_DIR creates dir + emits script with expected env vars; `--use-on-cd` emits Set-Location. Spec: powershell-shell-integration. Deps: 4.2. ~50 lines.
-- [ ] 5.4 `tests/use_cmd.rs` `#[ignore]`: full `fpm use` flow (resolve, retarget, env var, silent-if-unchanged). Spec: python-version-switching. Deps: 4.2. ~30 lines.
+- [x] 5.1 `tests/cli_dispatch.rs` (assert_cmd): `fpm --version` prints crate version, `fpm --help` lists subcommands exit 0, recognized subcommand routes. Spec: fpm-core Subcommand Routing. Deps: 4.2. ~60 lines.
+- [x] 5.2 `tests/passthrough.rs` `#[ignore]`: forwards args to py verbatim, propagates exit code, py missing → non-zero + stderr. Spec: fpm-core Pass-through. Deps: 4.2. ~40 lines.
+- [x] 5.3 `tests/env_cmd.rs`: `fpm env --shell powershell` with temp FPM_DIR creates dir + emits script with expected env vars; `--use-on-cd` emits Set-Location. Spec: powershell-shell-integration. Deps: 4.2. ~50 lines.
+- [x] 5.4 `tests/use_cmd.rs` `#[ignore]`: full `fpm use` flow (resolve, retarget, env var, silent-if-unchanged). Spec: python-version-switching. Deps: 4.2. ~30 lines.
 
 ## Phase 6: Documentation
 
-- [ ] 6.1 Create `README.md`: install snippet (`fpm env --use-on-cd --shell powershell | Out-String | Invoke-Expression`), $PROFILE locations (PS6+, PS5), supported commands table, cleanup note for stale multishells, PyManager 26.x+ requirement. Spec: powershell-shell-integration Install Snippet. Deps: 4.2. ~80 lines.
+- [x] 6.1 Create `README.md`: install snippet (`fpm env --use-on-cd --shell powershell | Out-String | Invoke-Expression`), $PROFILE locations (PS6+, PS5), supported commands table, cleanup note for stale multishells, PyManager 26.x+ requirement. Spec: powershell-shell-integration Install Snippet. Deps: 4.2. ~80 lines.
