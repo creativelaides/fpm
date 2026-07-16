@@ -214,6 +214,7 @@ dependencies = [
  "clap",
  "etcetera",
  "junction",
+ "once_cell",
  "pep440_rs",
  "predicates",
  "serde",

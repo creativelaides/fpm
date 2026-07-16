@@ -16,6 +16,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
 use crate::config;
@@ -68,14 +69,16 @@ pub trait PyManagerOps {
 /// Real PyManager client. Caches `py list --format=json` for the process
 /// lifetime (populated lazily on the first `list_runtimes` call).
 pub struct PyManager {
-    /// Cached runtime list. `None` until the first `list_runtimes` call.
-    runtimes: Option<Vec<Runtime>>,
+    /// Cached runtime list. Empty until the first `list_runtimes` call.
+    runtimes: OnceCell<Vec<Runtime>>,
 }
 
 impl PyManager {
     /// Creates a new `PyManager` with an empty cache.
     pub fn new() -> Self {
-        PyManager { runtimes: None }
+        PyManager {
+            runtimes: OnceCell::new(),
+        }
     }
 
     /// Spawns `py list --format=json` and parses the output into runtimes.
@@ -104,10 +107,8 @@ impl Default for PyManager {
 
 impl PyManagerOps for PyManager {
     fn list_runtimes(&mut self) -> Result<&[Runtime], FpmError> {
-        if self.runtimes.is_none() {
-            self.runtimes = Some(self.fetch_runtimes()?);
-        }
-        Ok(self.runtimes.as_ref().expect("just initialized"))
+        let runtimes = self.runtimes.get_or_try_init(|| self.fetch_runtimes())?;
+        Ok(runtimes)
     }
 
     fn resolve_exe(&mut self, tag: &str) -> Result<PathBuf, FpmError> {
