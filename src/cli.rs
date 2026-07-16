@@ -51,6 +51,13 @@ pub enum Commands {
     Default {
         /// Version tag to set as default. If omitted, prints the current default.
         tag: Option<String>,
+        /// Remove the default_tag from pymanager.json (no session change).
+        #[arg(long, conflicts_with = "tag")]
+        unset: bool,
+        /// Validate and preview the would-be default without side effects.
+        /// Requires a tag; mutually exclusive with --unset.
+        #[arg(long, requires = "tag", conflicts_with = "unset")]
+        dry_run: bool,
     },
 
     /// Emit a shell integration script for the given shell.

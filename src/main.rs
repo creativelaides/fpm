@@ -71,9 +71,24 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
             commands::current::run(&mut ctx.pymanager)
         }
 
-        Some(Commands::Default { tag }) => {
+        Some(Commands::Default {
+            tag,
+            unset,
+            dry_run,
+        }) => {
             let mut ctx = commands::CommandContext::from_env()?;
-            commands::default::run(&mut ctx.pymanager, tag.as_deref())
+            // Pass session_dir through as Option; default::run only requires it
+            // on the set path (validate → require session_dir → write →
+            // activate). Read, unset, and dry-run do not need it, so we must
+            // NOT error here when FPM_MULTISHELL_PATH is unset (spec: read/unset
+            // must work outside an fpm-integrated shell).
+            commands::default::run(
+                &mut ctx.pymanager,
+                tag.as_deref(),
+                unset,
+                dry_run,
+                ctx.session_dir.as_deref(),
+            )
         }
 
         Some(Commands::Env { shell, use_on_cd }) => match shell {
