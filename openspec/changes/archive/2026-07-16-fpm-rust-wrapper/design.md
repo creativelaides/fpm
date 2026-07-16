@@ -36,7 +36,7 @@ Windows-only Rust CLI wrapping PyManager (`py.exe`) via synchronous `std::proces
 
 **Alternatives**: Hand-rolled specifier parser (bug-prone, reinvents PEP 440); `python-pkginfo` equivalent (none exists in Rust).
 
-**Rationale**: PEP 440 specifier grammar is non-trivial (`>=3.12`, `~3.13`, `==3.14.*`, `!=3.13.1`). `pep440_rs` is battle-tested by `uv`. Keeps matching logic correct with minimal code.
+**Rationale**: PEP 440 specifier grammar is non-trivial (`>=3.12`, `~=3.13.0`, `==3.14.*`, `!=3.13.1`). `pep440_rs` is battle-tested by `uv`. Keeps matching logic correct with minimal code.
 
 ### Decision: Multishell Session Directory
 
@@ -75,8 +75,9 @@ fpm use 3.14 ──→ pymanager::resolve_exe("3.14")
                     └─→ exe_path
                          │
                  shim::retarget(session_dir, exe_path.parent())
-                    │  remove_dir(old junction) → junction::create(session_dir, install_dir)
-                    └─→ set PYTHON_MANAGER_DEFAULT=3.14 in-process
+                     │  remove_dir(old junction) → junction::create(install_dir, session_dir)
+                     │  // junction::create(target, junction_path) — target is the real dir, junction_path is the link
+                     └─→ set PYTHON_MANAGER_DEFAULT=3.14 in-process
                          │
                     stdout: "Using Python 3.14"
 ```
@@ -149,7 +150,8 @@ fn create_session_dir(fpm_dir: &Path) -> Result<PathBuf>;
 // Creates <fpm_dir>/multishells/<pid>_<random>/, returns path
 
 fn retarget(session_dir: &Path, install_dir: &Path) -> Result<()>;
-// remove_dir(session_dir) if junction exists, then junction::create(session_dir, install_dir)
+// remove_dir(session_dir) if junction exists, then junction::create(install_dir, session_dir)
+// junction::create(target, junction_path) — target is the real dir, junction_path is the link
 
 fn current_target(session_dir: &Path) -> Result<Option<PathBuf>>;
 // junction::get_target(session_dir), canonicalized

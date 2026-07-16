@@ -64,7 +64,7 @@ comments.
 When no `.python-version` is found at a directory, `fpm` SHALL read
 `pyproject.toml` in that directory and extract the Python version from
 `requires.python-version` or `project.requires-python`. Specifiers like `>=3.12`,
-`~3.13`, or `==3.14.*` SHALL be reduced to the highest installed runtime matching
+`~=3.13.0`, or `==3.14.*` SHALL be reduced to the highest installed runtime matching
 the specifier (queried via the cached `py list`).
 
 #### Scenario: Lower-bound specifier
