@@ -7,6 +7,7 @@
 
 mod config;
 mod error;
+mod pymanager;
 
 fn main() {
     println!("fpm {}", env!("CARGO_PKG_VERSION"));
