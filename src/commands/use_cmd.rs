@@ -12,15 +12,16 @@
 //   - Get session_dir from FPM_MULTISHELL_PATH env var (must be set).
 //   - If --silent-if-unchanged: compare current_target(session_dir) vs the
 //     resolved install_dir; if equal, suppress output and exit 0.
-//   - retarget(session_dir, install_dir) to rewrite the junction.
-//   - Set PYTHON_MANAGER_DEFAULT env var (in-process; the shell evaluates
-//     the env script for persistence).
+//   - Delegates retarget + PYTHON_MANAGER_DEFAULT set to the shared
+//     `commands::activate_session` helper so `fpm use` and `fpm default`
+//     cannot drift (spec: python-version-switching).
 //   - Print "Using Python <version>".
 //
 // Session-only: does NOT write pymanager.json.
 
 use std::path::{Path, PathBuf};
 
+use crate::commands::activate_session;
 use crate::config;
 use crate::error::FpmError;
 use crate::pymanager::PyManagerOps;
@@ -51,7 +52,8 @@ pub fn run<M: PyManagerOps>(
         None => version_file::resolve(cwd, pymanager)?,
     };
 
-    // 2. Resolve the exe path for this tag.
+    // 2. Resolve the exe path for this tag so we can derive the install dir
+    //    and (when --silent-if-unchanged) compare against the current target.
     let exe_path = pymanager.resolve_exe(&tag)?;
 
     // 3. Derive the install directory (parent of the exe).
@@ -79,13 +81,10 @@ pub fn run<M: PyManagerOps>(
         }
     }
 
-    // 6. Retarget the junction.
-    shim::retarget(session_dir, &canonical_install)?;
+    // 6. Activate the session via the shared helper (retarget + set env).
+    activate_session(pymanager, &tag, session_dir)?;
 
-    // 7. Set PYTHON_MANAGER_DEFAULT in-process.
-    std::env::set_var(config::PYTHON_MANAGER_DEFAULT_ENV, &tag);
-
-    // 8. Print the switch message.
+    // 7. Print the switch message.
     println!("Using Python {tag}");
 
     Ok(0)
