@@ -4,21 +4,19 @@ name: Windows Compatibility
 # multiple Windows versions. Separated from CI (fmt/clippy/unit tests)
 # so the main CI stays fast for contributors.
 #
-# This workflow installs PyManager + Python on each runner, builds fpm,
-# and runs the #[ignore] integration tests that require a real `py.exe`.
+# Install strategy (per https://docs.python.org/3/using/windows.html):
+# - Server 2022: MSIX via Add-AppxPackage (appinstaller from python.org)
+# - Server 2019: MSI via msiexec (MSIX not supported on Server 2019)
 #
 # Future contributors: copy this pattern for linux.yml or macos.yml
 # when adding support for other platforms.
 
 on:
-  # Run on releases and tags (not every PR — this is heavier)
   release:
     types: [published]
   push:
     tags: ['v*']
-  # Manual trigger
   workflow_dispatch:
-  # Nightly sanity check
   schedule:
     - cron: '0 6 * * *'
 
@@ -37,9 +35,11 @@ jobs:
           # Server 2022 — shares kernel base with Windows 11
           - os: windows-latest
             os-label: 'Server 2022'
+            pymanager-method: msix
           # Server 2019 — shares kernel base with Windows 10 1809
           - os: windows-2019
             os-label: 'Server 2019'
+            pymanager-method: msi
 
     steps:
       - uses: actions/checkout@v4
@@ -48,83 +48,100 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python with py launcher from python.org
+      - name: Remove legacy py launcher
         shell: pwsh
         run: |
-          # The new PyManager (py list, py install) is distributed as an MSIX
-          # app execution alias via the Microsoft Store, which does NOT work
-          # on Windows Server (GitHub Actions runners). The python.org installer
-          # provides the legacy py.exe launcher that supports `py -V:tag` but
-          # NOT `py list` or `py install`.
-          #
-          # We install Python from python.org and use the legacy launcher for
-          # basic compatibility. Commands that require the new PyManager
-          # (`py list --format=json`, `py install`) are expected to fail on
-          # Server runners — they are tested locally on desktop Windows instead.
-          $installerUrl = "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.exe"
-          $installer = "$env:TEMP\python-installer.exe"
-          Write-Host "Downloading Python 3.14.6 installer from $installerUrl"
-          Invoke-WebRequest -Uri $installerUrl -OutFile $installer -UseBasicParsing
+          # The legacy py.exe at C:\Windows\py.exe does NOT support
+          # `py list` or `py install`. It must be removed before installing
+          # the new PyManager, otherwise it shadows the new one on PATH.
+          # See: https://docs.python.org/3/using/windows.html#troubleshooting
+          $legacyPy = "C:\Windows\py.exe"
+          $legacyDll = "C:\Windows\pyshellext.dll"
+          foreach ($f in @($legacyPy, $legacyDll)) {
+            if (Test-Path $f) {
+              Write-Host "Removing legacy launcher: $f"
+              Remove-Item $f -Force -ErrorAction SilentlyContinue
+            }
+          }
 
-          Write-Host "Installing Python 3.14.6..."
-          Start-Process -FilePath $installer -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1" -Wait
+      - name: Install PyManager (MSIX — Server 2022)
+        if: matrix.pymanager-method == 'msix'
+        shell: pwsh
+        run: |
+          # Server 2022 supports MSIX. Install the PyManager app execution alias
+          # via the AppInstaller file from python.org.
+          # See: https://docs.python.org/3/using/windows.html#advanced-installation
+          Write-Host "Installing PyManager via MSIX (appinstaller)..."
+          Add-AppxPackage -AppInstallerFile "https://www.python.org/ftp/python/pymanager/pymanager.appinstaller"
+
+          # Refresh PATH — the MSIX installs as app execution alias in WindowsApps
+          $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
+          $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          $env:PATH = "$machinePath;$userPath"
+
+          # Ensure WindowsApps is on PATH (where the new py.exe alias lives)
+          $windowsApps = "$env:LocalAppData\Microsoft\WindowsApps"
+          if ($env:PATH -notlike "*$windowsApps*") {
+            $env:PATH = "$windowsApps;$env:PATH"
+          }
+          echo "$windowsApps" >> $env:GITHUB_PATH
+
+      - name: Install PyManager (MSI — Server 2019)
+        if: matrix.pymanager-method == 'msi'
+        shell: pwsh
+        run: |
+          # Server 2019 does NOT support MSIX. Use the MSI installer instead.
+          # The MSI installs to Program Files and modifies system PATH.
+          # See: https://docs.python.org/3/using/windows.html#advanced-installation
+          $msiUrl = "https://www.python.org/ftp/python/pymanager/python-manager-26.3.msi"
+          $msiPath = "$env:TEMP\pymanager.msi"
+          Write-Host "Downloading PyManager MSI from $msiUrl"
+          Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
+
+          Write-Host "Installing PyManager via MSI..."
+          Start-Process msiexec.exe -ArgumentList "/i", $msiPath, "/quiet", "/norestart" -Wait
 
           # Refresh PATH
           $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
           $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
           $env:PATH = "$machinePath;$userPath"
 
-          # Verify py.exe is available (legacy launcher — supports py -V:tag)
+          # The MSI installs py.exe to Program Files — find and add to PATH
+          $pyCandidates = @(
+            "C:\Program Files\PyManager\py.exe",
+            "C:\Program Files\Python Manager\py.exe"
+          )
+          foreach ($p in $pyCandidates) {
+            if (Test-Path $p) {
+              $dir = Split-Path $p
+              Write-Host "Found py.exe at: $p"
+              $env:PATH = "$dir;$env:PATH"
+              echo "$dir" >> $env:GITHUB_PATH
+              break
+            }
+          }
+
+      - name: Verify PyManager and install Python runtimes
+        shell: pwsh
+        run: |
+          # Verify the NEW PyManager is installed (not the legacy launcher)
           $pyCmd = Get-Command py -ErrorAction SilentlyContinue
           if ($pyCmd) {
             Write-Host "py.exe found at: $($pyCmd.Source)"
           } else {
-            Write-Host "WARNING: py.exe not found on PATH"
-            # Try common locations
-            $candidates = @("C:\Windows\py.exe", "C:\Program Files\Python314\py.exe")
-            foreach ($c in $candidates) {
-              if (Test-Path $c) {
-                Write-Host "Found py.exe at: $c"
-                $env:PATH = "$(Split-Path $c);$env:PATH"
-                break
-              }
-            }
+            Write-Host "ERROR: py.exe not found on PATH after PyManager install"
+            exit 1
           }
 
+          # Verify py list works (this is the key test — legacy launcher fails here)
           py --version
           Write-Host "---"
-          # Legacy launcher does NOT support `py list` — it supports `py -V:tag` only
-          # Try py list anyway and document the result
-          $result = py list 2>&1
-          Write-Host "py list output: $result"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "NOTE: py list is not supported by the legacy launcher on Windows Server."
-            Write-Host "This is expected — the new PyManager requires the Microsoft Store (MSIX)."
-            Write-Host "fpm commands that depend on py list will be skipped in this environment."
-            # Set an env var so subsequent steps know PyManager is limited
-            echo "FPM_PYMANAGER_LIMITED=1" >> $env:GITHUB_ENV
-          }
+          py list
 
-      - name: Install Python 3.13 for testing
-        shell: pwsh
-        run: |
-          # Install Python 3.13 from python.org (can't use py install on legacy launcher)
-          $installerUrl = "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe"
-          $installer = "$env:TEMP\python-313-installer.exe"
-          Write-Host "Downloading Python 3.13.7 installer from $installerUrl"
-          Invoke-WebRequest -Uri $installerUrl -OutFile $installer -UseBasicParsing
-
-          Write-Host "Installing Python 3.13.7..."
-          Start-Process -FilePath $installer -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1" -Wait
-
-          # Refresh PATH
-          $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
-          $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-          $env:PATH = "$machinePath;$userPath"
-
-          # Verify both versions are available via the legacy launcher
-          py -3.14 --version
-          py -3.13 --version
+          # Install Python 3.14 and 3.13 via the new PyManager
+          py install 3.14
+          py install 3.13
+          py list
 
       - name: Build fpm
         run: cargo build --release
@@ -139,23 +156,12 @@ jobs:
         run: cargo test
 
       - name: Run integration tests (including ignored)
-        if: env.FPM_PYMANAGER_LIMITED != '1'
         shell: pwsh
         run: |
-          # Run all tests including #[ignore] ones that need the new PyManager
+          # Run all tests including #[ignore] ones that need real PyManager
           cargo test -- --ignored --nocapture
 
-      - name: Run integration tests (limited PyManager)
-        if: env.FPM_PYMANAGER_LIMITED == '1'
-        shell: pwsh
-        run: |
-          # Only run non-ignored tests — the legacy launcher can't support
-          # `py list` or `py install` that the ignored tests depend on
-          Write-Host "PyManager is limited (legacy launcher) — skipping #[ignore] tests"
-          cargo test
-
       - name: Smoke test — fpm list
-        if: env.FPM_PYMANAGER_LIMITED != '1'
         shell: pwsh
         run: fpm list
 
@@ -168,7 +174,6 @@ jobs:
         run: fpm env --shell powershell
 
       - name: Smoke test — fpm use
-        if: env.FPM_PYMANAGER_LIMITED != '1'
         shell: pwsh
         run: |
           fpm env --shell powershell | Out-String | Invoke-Expression
@@ -176,11 +181,9 @@ jobs:
           fpm current
           python --version
 
-      - name: Smoke test — pass-through (legacy launcher)
+      - name: Smoke test — pass-through
         shell: pwsh
-        run: |
-          # py -3.14 --version works with the legacy launcher
-          fpm -3.14 --version
+        run: fpm -0p
 
       - name: Upload test results on failure
         if: failure()
