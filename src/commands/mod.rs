@@ -17,9 +17,11 @@ use crate::pymanager::PyManager;
 
 pub mod current;
 pub mod default;
+pub mod env_cmd;
 pub mod install;
 pub mod list;
 pub mod passthrough;
+pub mod use_cmd;
 
 /// Shared context passed to every command handler.
 ///
