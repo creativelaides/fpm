@@ -73,7 +73,6 @@ pub trait PyManagerOps {
     /// the file or key is absent (no-op, no file created). This lets the caller
     /// print "Removed default" vs "No default configured" in a single call
     /// without a read-then-unset race.
-    #[allow(dead_code)]
     fn unset_default(&mut self) -> Result<bool, FpmError>;
 
     /// Spawns `py install <tag>` and returns the child exit code.
@@ -302,7 +301,6 @@ fn write_default_tag(path: &Path, tag: &str) -> Result<(), FpmError> {
 /// inserts/overwrites the key, `unset_default` removes it. Used by
 /// `fpm default --unset` to print "Removed default" vs "No default
 /// configured" in a single call without a read-then-unset race.
-#[allow(dead_code)]
 fn unset_default_tag(path: &Path) -> Result<bool, FpmError> {
     // Missing file → nothing to unset.
     let bytes = match std::fs::read(path) {
@@ -549,5 +547,88 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(json["default_tag"], "3.14");
         assert!(json.is_object(), "file should now be a JSON object");
+    }
+
+    // ── unset_default_tag ───────────────────────────────────────────────────
+
+    #[test]
+    fn unset_default_tag_removes_key_and_preserves_others() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("pymanager.json");
+        fs::write(&path, r#"{"default_tag": "3.13", "install_dir": "C:\\py"}"#).unwrap();
+
+        let removed = unset_default_tag(&path).unwrap();
+        assert!(removed, "key was present and removed");
+
+        let raw = fs::read_to_string(&path).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert!(
+            json.get("default_tag").is_none() || json["default_tag"].is_null(),
+            "default_tag must be absent"
+        );
+        assert_eq!(json["install_dir"], "C:\\py", "other keys preserved");
+    }
+
+    #[test]
+    fn unset_default_tag_returns_false_when_file_missing() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("does-not-exist.json");
+
+        let removed = unset_default_tag(&path).unwrap();
+        assert!(!removed, "missing file → false");
+        // No file created.
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn unset_default_tag_returns_false_when_key_absent() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("pymanager.json");
+        fs::write(&path, r#"{"install_dir": "C:\\py"}"#).unwrap();
+
+        let removed = unset_default_tag(&path).unwrap();
+        assert!(!removed, "key absent → false");
+
+        // File unchanged.
+        let raw = fs::read_to_string(&path).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(json["install_dir"], "C:\\py");
+    }
+
+    #[test]
+    fn unset_default_tag_round_trips_with_read() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("pymanager.json");
+
+        // write then unset then read.
+        write_default_tag(&path, "3.14").unwrap();
+        assert_eq!(read_default_tag(&path).unwrap(), Some("3.14".to_string()));
+
+        assert!(unset_default_tag(&path).unwrap());
+        assert_eq!(read_default_tag(&path).unwrap(), None);
+    }
+
+    #[test]
+    fn unset_default_tag_returns_false_for_non_object_file() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("pymanager.json");
+        fs::write(&path, r#"[1, 2, 3]"#).unwrap();
+
+        let removed = unset_default_tag(&path).unwrap();
+        assert!(!removed, "non-object file → no key to remove");
+    }
+
+    #[test]
+    fn mock_unset_default_via_trait() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("pymanager.json");
+        fs::write(&path, r#"{"default_tag": "3.13", "other": 1}"#).unwrap();
+
+        let mut mock = MockPyManager::new(canned_runtimes(), path.clone());
+        assert!(mock.unset_default().unwrap(), "key was present");
+        assert!(
+            !mock.unset_default().unwrap(),
+            "second call: key now absent"
+        );
     }
 }
