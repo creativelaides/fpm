@@ -5,6 +5,7 @@
 
 #![allow(dead_code)] // Modules wired in PR2-PR4; not consumed by main() yet.
 
+mod commands;
 mod config;
 mod error;
 mod pymanager;
