@@ -1,8 +1,28 @@
-# fpm
+<div align="center">
+
+# fpm (Fast Python Manager)
 
 A fast Python version manager for Windows, built in Rust. Wraps the official
 Python Install Manager (`py`/`pymanager`) for per-session Python version
 switching, inspired by [fnm](https://github.com/Schniz/fnm).
+
+[![Crates.io](https://img.shields.io/crates/v/fpm?style=flat-square)](https://crates.io/crates/fpm)
+[![npm](https://img.shields.io/npm/v/fpm?style=flat-square)](https://www.npmjs.com/package/fpm)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/creativelaides/fpm/ci.yml?style=flat-square&label=CI)](https://github.com/creativelaides/fpm/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/creativelaides/fpm?style=flat-square&label=Release)](https://github.com/creativelaides/fpm/releases/latest)
+
+<br>
+
+<div style="display: inline-block; border-radius: 50%; overflow: hidden; width: 125px; height: 125px;">
+  <img src="assets/kwak_logo_sponsor.jpg" width="125" height="125" alt="KWAK — Kit for Windows Application Kickstart" />
+</div>
+
+<sub>Part of <strong>KWAK</strong> — <em>Kit for Windows Application Kickstart</em></sub>
+
+</div>
+
+> [English](README.md) | [Espanol](lang/README.es.md)
 
 ## Features
 

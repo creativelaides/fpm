@@ -22,6 +22,12 @@ use serde::Deserialize;
 use crate::config;
 use crate::error::FpmError;
 
+/// Wrapper for the `py list --format=json` output shape: `{"versions": [...]}`.
+#[derive(Debug, Deserialize)]
+struct PyListResponse {
+    versions: Vec<Runtime>,
+}
+
 /// A single installed Python runtime as reported by `py list`.
 ///
 /// Mirrors the JSON shape emitted by `py list --format=json`. Unknown keys are
@@ -30,8 +36,8 @@ use crate::error::FpmError;
 pub struct Runtime {
     /// PyManager tag, e.g. `"3.14-64"` (version plus architecture suffix).
     pub tag: String,
-    /// Bare version string, e.g. `"3.14.6"`.
-    #[serde(rename = "version")]
+    /// Bare version string, e.g. `"3.14.6"`. Maps to `sort-version` in the JSON.
+    #[serde(rename = "sort-version")]
     pub version: String,
     /// Full path to the runtime's `python.exe`.
     pub executable: PathBuf,
@@ -92,10 +98,10 @@ impl PyManager {
             return Err(FpmError::PyNotFound);
         }
 
-        let runtimes: Vec<Runtime> = serde_json::from_slice(&output.stdout)
+        let response: PyListResponse = serde_json::from_slice(&output.stdout)
             .map_err(|e| FpmError::ConfigError(e.to_string()))?;
 
-        Ok(runtimes)
+        Ok(response.versions)
     }
 }
 
@@ -271,28 +277,33 @@ mod tests {
     use std::io::Write;
 
     /// Canned `py list --format=json` fixture resembling real PyManager output.
-    const JSON_FIXTURE: &str = r#"[
-        {
-            "tag": "3.14-64",
-            "version": "3.14.6",
-            "executable": "C:\\Python314\\python.exe",
-            "default": true
-        },
-        {
-            "tag": "3.13-64",
-            "version": "3.13.7",
-            "executable": "C:\\Python313\\python.exe",
-            "default": false
-        },
-        {
-            "tag": "3.12-64",
-            "version": "3.12.11",
-            "executable": "C:\\Python312\\python.exe"
-        }
-    ]"#;
+    /// The real output is a JSON object with a "versions" array, not a bare array.
+    const JSON_FIXTURE: &str = r#"{
+        "versions": [
+            {
+                "tag": "3.14-64",
+                "sort-version": "3.14.6",
+                "executable": "C:\\Python314\\python.exe",
+                "default": true
+            },
+            {
+                "tag": "3.13-64",
+                "sort-version": "3.13.7",
+                "executable": "C:\\Python313\\python.exe",
+                "default": false
+            },
+            {
+                "tag": "3.12-64",
+                "sort-version": "3.12.11",
+                "executable": "C:\\Python312\\python.exe"
+            }
+        ]
+    }"#;
 
     fn canned_runtimes() -> Vec<Runtime> {
-        serde_json::from_str(JSON_FIXTURE).expect("fixture must parse")
+        let response: PyListResponse =
+            serde_json::from_str(JSON_FIXTURE).expect("fixture must parse");
+        response.versions
     }
 
     #[test]
