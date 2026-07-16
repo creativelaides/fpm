@@ -36,9 +36,9 @@ Chain strategy: pending
 
 ## Phase 1: Foundation
 
-- [ ] 1.1 `git init`, `.gitignore` (target/), `cargo init --name fpm`, initial commit. Files: .gitignore, Cargo.toml, src/main.rs. Spec: fpm-core. Deps: none. ~60 lines.
-- [ ] 1.2 Create `src/error.rs`: `FpmError` enum (PyNotFound, VersionNotInstalled, NoVersionFile, SpecNotSatisfied, ShimError, ConfigError) + exit-code mapping (1-6). Spec: fpm-core Exit Code Propagation. Deps: 1.1. ~40 lines.
-- [ ] 1.3 Create `src/config.rs`: `fpm_dir()` via etcetera (default %LocalAppData%\fpm), `pymanager_json_path()` (%AppData%\Python\), constants. Spec: powershell-shell-integration, pymanager-delegation. Deps: 1.1. ~40 lines.
+- [x] 1.1 `git init`, `.gitignore` (target/), `cargo init --name fpm`, initial commit. Files: .gitignore, Cargo.toml, src/main.rs. Spec: fpm-core. Deps: none. ~60 lines.
+- [x] 1.2 Create `src/error.rs`: `FpmError` enum (PyNotFound, VersionNotInstalled, NoVersionFile, SpecNotSatisfied, ShimError, ConfigError) + exit-code mapping (1-6). Spec: fpm-core Exit Code Propagation. Deps: 1.1. ~40 lines.
+- [x] 1.3 Create `src/config.rs`: `fpm_dir()` via etcetera (default %LocalAppData%\fpm), `pymanager_json_path()` (%AppData%\Python\), constants. Spec: powershell-shell-integration, pymanager-delegation. Deps: 1.1. ~40 lines.
 
 ## Phase 2: Core Implementation
 

@@ -118,7 +118,10 @@ mod tests {
             FpmError::PyNotFound.exit_code(),
             FpmError::VersionNotInstalled { tag: String::new() }.exit_code(),
             FpmError::NoVersionFile.exit_code(),
-            FpmError::SpecNotSatisfied { specifier: String::new() }.exit_code(),
+            FpmError::SpecNotSatisfied {
+                specifier: String::new(),
+            }
+            .exit_code(),
             FpmError::ShimError(io::Error::new(io::ErrorKind::Other, "x")).exit_code(),
             FpmError::ConfigError(String::new()).exit_code(),
         ];
@@ -142,7 +145,10 @@ mod tests {
             "Version 3.14 is not installed"
         );
         assert_eq!(
-            FpmError::SpecNotSatisfied { specifier: ">=3.15".into() }.to_string(),
+            FpmError::SpecNotSatisfied {
+                specifier: ">=3.15".into()
+            }
+            .to_string(),
             "No installed runtime satisfies >=3.15"
         );
     }

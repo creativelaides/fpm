@@ -5,8 +5,8 @@
 
 #![allow(dead_code)] // Modules wired in PR2-PR4; not consumed by main() yet.
 
-mod error;
 mod config;
+mod error;
 
 fn main() {
     println!("fpm {}", env!("CARGO_PKG_VERSION"));

@@ -70,7 +70,10 @@ pub fn pymanager_json_path() -> Result<PathBuf, ConfigError> {
     let strategy = etcetera::base_strategy::choose_base_strategy()
         .map_err(|e| ConfigError::HomeDirError(e.to_string()))?;
 
-    Ok(strategy.config_dir().join(PYMANAGER_DIR).join(PYMANAGER_JSON))
+    Ok(strategy
+        .config_dir()
+        .join(PYMANAGER_DIR)
+        .join(PYMANAGER_JSON))
 }
 
 /// Returns the multishells directory path under the given fpm dir.
@@ -133,10 +136,7 @@ mod tests {
         // Don't depend on env override; just check the suffix structure.
         let path = pymanager_json_path().unwrap();
         assert_eq!(path.file_name().unwrap(), PYMANAGER_JSON);
-        assert_eq!(
-            path.parent().unwrap().file_name().unwrap(),
-            PYMANAGER_DIR,
-        );
+        assert_eq!(path.parent().unwrap().file_name().unwrap(), PYMANAGER_DIR,);
     }
 
     #[test]
