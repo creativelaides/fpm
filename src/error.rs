@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn shim_error_maps_to_5() {
-        let err = FpmError::ShimError(io::Error::new(io::ErrorKind::Other, "boom"));
+        let err = FpmError::ShimError(io::Error::other("boom"));
         assert_eq!(err.exit_code(), 5);
     }
 
@@ -122,7 +122,7 @@ mod tests {
                 specifier: String::new(),
             }
             .exit_code(),
-            FpmError::ShimError(io::Error::new(io::ErrorKind::Other, "x")).exit_code(),
+            FpmError::ShimError(io::Error::other("x")).exit_code(),
             FpmError::ConfigError(String::new()).exit_code(),
         ];
         // Each code is unique
