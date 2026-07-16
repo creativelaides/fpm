@@ -8,6 +8,7 @@
 mod config;
 mod error;
 mod pymanager;
+mod shell;
 mod shim;
 mod version_file;
 
