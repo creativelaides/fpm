@@ -48,53 +48,60 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python via setup-python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-
-      - name: Install PyManager (py launcher)
+      - name: Install Python with py launcher from python.org
         shell: pwsh
         run: |
-          # The py launcher is NOT included in actions/setup-python.
-          # Download the standalone Windows Python launcher from python.org.
-          # This installs py.exe to WindowsApps (per-user) which provides
-          # `py list`, `py install`, `py -V:<tag>`, etc.
-          $launcherUrl = "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.exe"
+          # Do NOT use actions/setup-python — it puts python.exe first in PATH
+          # which shadows py.exe. Instead, install Python from the official
+          # installer which includes the py launcher (PyManager).
+          $installerUrl = "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.exe"
           $installer = "$env:TEMP\python-installer.exe"
-          Write-Host "Downloading Python installer with py launcher from $launcherUrl"
-          Invoke-WebRequest -Uri $launcherUrl -OutFile $installer -UseBasicParsing
+          Write-Host "Downloading Python 3.14.6 installer from $installerUrl"
+          Invoke-WebRequest -Uri $installerUrl -OutFile $installer -UseBasicParsing
 
-          # Silent install — includes the py launcher (PREPENDPATH=1 adds to PATH)
+          # Silent install for all users with py launcher and PATH prepend
+          Write-Host "Installing Python 3.14.6 with py launcher..."
           Start-Process -FilePath $installer -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1" -Wait
 
-          # Refresh PATH for the current session
-          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-          Write-Host "PATH: $env:PATH"
+          # Refresh PATH — the installer added Python + py launcher to system PATH
+          $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
+          $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          $env:PATH = "$machinePath;$userPath"
+          Write-Host "PATH updated"
 
-          # Verify py.exe is available
-          $pyExe = Get-Command py -ErrorAction SilentlyContinue
-          if (-not $pyExe) {
-            # Try to find it manually
-            $pyPaths = @(
+          # Verify py.exe is available and is the REAL launcher (not python.exe)
+          $pyCmd = Get-Command py -ErrorAction SilentlyContinue
+          if ($pyCmd) {
+            Write-Host "py.exe found at: $($pyCmd.Source)"
+          } else {
+            Write-Host "py.exe not found on PATH — searching common locations..."
+            $candidates = @(
+              "C:\Windows\py.exe",
               "$env:LocalAppData\Microsoft\WindowsApps\py.exe",
-              "C:\Program Files\Python314\py.exe",
-              "C:\Windows\py.exe"
+              "C:\Program Files\Python314\py.exe"
             )
-            foreach ($p in $pyPaths) {
-              if (Test-Path $p) {
-                Write-Host "Found py.exe at: $p"
+            foreach ($c in $candidates) {
+              if (Test-Path $c) {
+                Write-Host "Found py.exe at: $c"
+                $env:PATH = "$(Split-Path $c);$env:PATH"
                 break
               }
             }
           }
+
+          # Critical: verify py is the launcher, not python.exe
           py --version
+          Write-Host "---"
           py list
 
       - name: Install additional Python version
         shell: pwsh
         run: |
-          # Install Python 3.13 via py manager
+          # Ensure py launcher is on PATH (refresh after install)
+          $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
+          $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          $env:PATH = "$machinePath;$userPath"
+
           py install 3.13
           py list
 
