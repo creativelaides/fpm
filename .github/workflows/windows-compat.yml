@@ -48,21 +48,53 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install PyManager (Python launcher)
+      - name: Install Python via setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install PyManager (py launcher)
         shell: pwsh
         run: |
-          # Install Python which includes the py launcher
-          winget install Python.Python.3.14 --accept-package-agreements --accept-source-agreements
+          # The py launcher is NOT included in actions/setup-python.
+          # Download the standalone Windows Python launcher from python.org.
+          # This installs py.exe to WindowsApps (per-user) which provides
+          # `py list`, `py install`, `py -V:<tag>`, etc.
+          $launcherUrl = "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.exe"
+          $installer = "$env:TEMP\python-installer.exe"
+          Write-Host "Downloading Python installer with py launcher from $launcherUrl"
+          Invoke-WebRequest -Uri $launcherUrl -OutFile $installer -UseBasicParsing
+
+          # Silent install — includes the py launcher (PREPENDPATH=1 adds to PATH)
+          Start-Process -FilePath $installer -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1" -Wait
+
           # Refresh PATH for the current session
           $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
           Write-Host "PATH: $env:PATH"
+
           # Verify py.exe is available
+          $pyExe = Get-Command py -ErrorAction SilentlyContinue
+          if (-not $pyExe) {
+            # Try to find it manually
+            $pyPaths = @(
+              "$env:LocalAppData\Microsoft\WindowsApps\py.exe",
+              "C:\Program Files\Python314\py.exe",
+              "C:\Windows\py.exe"
+            )
+            foreach ($p in $pyPaths) {
+              if (Test-Path $p) {
+                Write-Host "Found py.exe at: $p"
+                break
+              }
+            }
+          }
           py --version
           py list
 
-      - name: Install test Python versions
+      - name: Install additional Python version
         shell: pwsh
         run: |
+          # Install Python 3.13 via py manager
           py install 3.13
           py list
 
