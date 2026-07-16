@@ -48,48 +48,57 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python with py launcher from python.org
+      - name: Install Python with PyManager from python.org
         shell: pwsh
         run: |
-          # Do NOT use actions/setup-python — it puts python.exe first in PATH
-          # which shadows py.exe. Instead, install Python from the official
-          # installer which includes the py launcher (PyManager).
+          # GitHub Actions Windows runners have a LEGACY py.exe at C:\Windows\py.exe
+          # that does NOT support `py list`, `py install`, etc. It must be removed
+          # so the new PyManager (installed as an app execution alias) takes over.
+          $legacyPy = "C:\Windows\py.exe"
+          if (Test-Path $legacyPy) {
+            Write-Host "Removing legacy py.exe at $legacyPy"
+            Remove-Item $legacyPy -Force
+          }
+
+          # Also remove the legacy launcher DLL if present
+          $legacyDll = "C:\Windows\pyshellext.dll"
+          if (Test-Path $legacyDll) {
+            Remove-Item $legacyDll -Force
+          }
+
+          # Install Python 3.14 from the official installer — this includes
+          # the new PyManager (py launcher) that supports `py list`, `py install`.
           $installerUrl = "https://www.python.org/ftp/python/3.14.6/python-3.14.6-amd64.exe"
           $installer = "$env:TEMP\python-installer.exe"
           Write-Host "Downloading Python 3.14.6 installer from $installerUrl"
           Invoke-WebRequest -Uri $installerUrl -OutFile $installer -UseBasicParsing
 
-          # Silent install for all users with py launcher and PATH prepend
-          Write-Host "Installing Python 3.14.6 with py launcher..."
+          Write-Host "Installing Python 3.14.6 with PyManager..."
           Start-Process -FilePath $installer -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1" -Wait
 
-          # Refresh PATH — the installer added Python + py launcher to system PATH
+          # Refresh PATH
           $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
           $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
           $env:PATH = "$machinePath;$userPath"
-          Write-Host "PATH updated"
 
-          # Verify py.exe is available and is the REAL launcher (not python.exe)
-          $pyCmd = Get-Command py -ErrorAction SilentlyContinue
-          if ($pyCmd) {
-            Write-Host "py.exe found at: $($pyCmd.Source)"
-          } else {
-            Write-Host "py.exe not found on PATH — searching common locations..."
-            $candidates = @(
-              "C:\Windows\py.exe",
-              "$env:LocalAppData\Microsoft\WindowsApps\py.exe",
-              "C:\Program Files\Python314\py.exe"
-            )
-            foreach ($c in $candidates) {
-              if (Test-Path $c) {
-                Write-Host "Found py.exe at: $c"
-                $env:PATH = "$(Split-Path $c);$env:PATH"
-                break
-              }
+          # The new PyManager installs as an app execution alias at:
+          # %LocalAppData%\Microsoft\WindowsApps\py.exe
+          # Ensure it's on PATH (it should be via WindowsApps which is in user PATH)
+          $windowsApps = "$env:LocalAppData\Microsoft\WindowsApps"
+          if (Test-Path "$windowsApps\py.exe") {
+            Write-Host "New PyManager found at: $windowsApps\py.exe"
+            # Ensure WindowsApps is on PATH
+            if ($env:PATH -notlike "*$windowsApps*") {
+              $env:PATH = "$windowsApps;$env:PATH"
             }
           }
 
-          # Critical: verify py is the launcher, not python.exe
+          # Verify
+          $pyCmd = Get-Command py -ErrorAction SilentlyContinue
+          if ($pyCmd) {
+            Write-Host "py.exe found at: $($pyCmd.Source)"
+          }
+
           py --version
           Write-Host "---"
           py list
