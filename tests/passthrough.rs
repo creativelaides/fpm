@@ -22,16 +22,20 @@ fn passthrough_forwards_list_to_py() {
         .success();
 }
 
-/// `fpm --version` passes through to py.exe, which prints the Python version
-/// manager version.
+/// `fpm -0p` passes through to py.exe, which prints installed Python
+/// runtimes with their executable paths (one per line). The `-0p` flag is
+/// a py launcher flag not intercepted by clap, so it exercises true
+/// pass-through behavior. We assert the output contains "Python" which
+/// appears in the runtime install paths.
 #[test]
 #[ignore]
 fn passthrough_forwards_version_to_py() {
     Command::cargo_bin("fpm")
         .unwrap()
-        .arg("--version")
+        .arg("-0p")
         .assert()
-        .stdout(contains("Python")); // py --version prints something with "Python"
+        .success()
+        .stdout(contains("Python")); // py -0p prints paths containing "Python"
 }
 
 /// `fpm -V:3.13 -m markitdown` forwards all args to py.exe verbatim.
