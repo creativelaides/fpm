@@ -67,6 +67,15 @@ pub trait PyManagerOps {
     /// Writes `default_tag` to `pymanager.json`, preserving all other keys.
     fn write_default(&mut self, tag: &str) -> Result<(), FpmError>;
 
+    /// Removes `default_tag` from `pymanager.json`, preserving all other keys.
+    ///
+    /// Returns `Ok(true)` if the key was present and removed, `Ok(false)` if
+    /// the file or key is absent (no-op, no file created). This lets the caller
+    /// print "Removed default" vs "No default configured" in a single call
+    /// without a read-then-unset race.
+    #[allow(dead_code)]
+    fn unset_default(&mut self) -> Result<bool, FpmError>;
+
     /// Spawns `py install <tag>` and returns the child exit code.
     #[allow(dead_code)]
     fn install(&mut self, tag: &str) -> Result<i32, FpmError>;
@@ -152,6 +161,12 @@ impl PyManagerOps for PyManager {
         write_default_tag(&path, tag)
     }
 
+    fn unset_default(&mut self) -> Result<bool, FpmError> {
+        let path =
+            config::pymanager_json_path().map_err(|e| FpmError::ConfigError(e.to_string()))?;
+        unset_default_tag(&path)
+    }
+
     fn install(&mut self, tag: &str) -> Result<i32, FpmError> {
         let status = Command::new("py")
             .args(["install", tag])
@@ -203,6 +218,10 @@ impl PyManagerOps for MockPyManager {
 
     fn write_default(&mut self, tag: &str) -> Result<(), FpmError> {
         write_default_tag(&self.config_path, tag)
+    }
+
+    fn unset_default(&mut self) -> Result<bool, FpmError> {
+        unset_default_tag(&self.config_path)
     }
 
     fn install(&mut self, _tag: &str) -> Result<i32, FpmError> {
@@ -268,6 +287,50 @@ fn write_default_tag(path: &Path, tag: &str) -> Result<(), FpmError> {
     std::fs::write(path, pretty).map_err(|e| FpmError::ConfigError(e.to_string()))?;
 
     Ok(())
+}
+
+/// Removes `default_tag` from a JSON file, preserving all other keys.
+///
+/// Returns:
+/// - `Ok(true)`  — the `default_tag` key was present and removed (file and
+///   other keys preserved).
+/// - `Ok(false)` — the file is missing OR the key is absent (no-op; no file
+///   is created).
+/// - `Err`       — IO or parse failure.
+///
+/// This is the symmetric counterpart of `write_default_tag`: `write_default`
+/// inserts/overwrites the key, `unset_default` removes it. Used by
+/// `fpm default --unset` to print "Removed default" vs "No default
+/// configured" in a single call without a read-then-unset race.
+#[allow(dead_code)]
+fn unset_default_tag(path: &Path) -> Result<bool, FpmError> {
+    // Missing file → nothing to unset.
+    let bytes = match std::fs::read(path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(e) => return Err(FpmError::ConfigError(e.to_string())),
+    };
+
+    let mut json: serde_json::Value =
+        serde_json::from_slice(&bytes).map_err(|e| FpmError::ConfigError(e.to_string()))?;
+
+    // Only an object can hold a `default_tag` key. A non-object file (e.g. an
+    // array or scalar) has no key to remove — return false without rewriting
+    // it, mirroring read_default_tag's silent skip.
+    let removed = match json.as_object_mut() {
+        Some(obj) => obj.remove("default_tag").is_some(),
+        None => false,
+    };
+
+    if !removed {
+        return Ok(false);
+    }
+
+    let pretty =
+        serde_json::to_string_pretty(&json).map_err(|e| FpmError::ConfigError(e.to_string()))?;
+    std::fs::write(path, pretty).map_err(|e| FpmError::ConfigError(e.to_string()))?;
+
+    Ok(true)
 }
 
 #[cfg(test)]
