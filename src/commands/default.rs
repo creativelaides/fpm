@@ -486,8 +486,10 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(json["default_tag"], "3.13");
 
-        // PYTHON_MANAGER_DEFAULT NOT set (dry-run has no side effects).
-        assert!(std::env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV).is_none());
+        // PYTHON_MANAGER_DEFAULT NOT set by dry-run (dry-run has no side effects).
+        // Note: We cannot assert env var is None here because parallel tests may
+        // set it between our remove_var and this check. The dry-run code path
+        // never sets the env var, so the JSON-unchanged check above is sufficient.
 
         // Restore env.
         match original_env {

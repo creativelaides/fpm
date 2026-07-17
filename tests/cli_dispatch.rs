@@ -17,7 +17,7 @@ fn version_prints_crate_version() {
         .arg("--version")
         .assert()
         .success()
-        .stdout(contains("fpm 0.1.0"));
+        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))));
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn version_short_flag_also_works() {
         .arg("-V")
         .assert()
         .success()
-        .stdout(contains("fpm 0.1.0"));
+        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))));
 }
 
 // ── --help ────────────────────────────────────────────────────────────────

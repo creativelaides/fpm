@@ -3,8 +3,11 @@ name = "fpm"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "A Windows-native Rust wrapper around PyManager for per-session Python version switching"
+description = "A Windows-native Rust wrapper around PyManager for per-session and global Python version switching"
 authors = ["Velaides"]
+repository = "https://github.com/creativelaides/fpm"
+keywords = ["python", "version-manager", "windows", "pymanager", "cli"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env", "cargo"] }
