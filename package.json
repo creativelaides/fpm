@@ -1,6 +1,6 @@
 {
   "name": "fpm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A Windows-native Rust wrapper around PyManager for per-session Python version switching",
   "license": "MIT",
