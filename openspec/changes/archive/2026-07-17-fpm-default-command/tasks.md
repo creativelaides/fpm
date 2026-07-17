@@ -46,5 +46,5 @@ Chain strategy: pending
 
 ## Phase 4: Verification
 
-- [ ] 4.1 Run `cargo fmt`, `cargo clippy --all-targets -- -D warnings`, `cargo test` (124 existing + new tests) — all green.
-- [ ] 4.2 Confirm spec scenarios map 1:1 to tests: pymanager-delegation (set+activate, read, unset x3, dry-run x2, reject uninstalled, FPM_MULTISHELL_PATH) and python-version-switching (reuse, use stays session-only, reused activation fails without shim dir).
+- [x] 4.1 Run `cargo fmt`, `cargo clippy --all-targets -- -D warnings`, `cargo test` (124 existing + new tests) — all green.
+- [x] 4.2 Confirm spec scenarios map 1:1 to tests: pymanager-delegation (set+activate, read, unset x3, dry-run x2, reject uninstalled, FPM_MULTISHELL_PATH) and python-version-switching (reuse, use stays session-only, reused activation fails without shim dir).
