@@ -4,7 +4,7 @@
 
 Un gestor de versiones de Python rapido para Windows, construido en Rust.
 Envuelve el Python Install Manager oficial (`py`/`pymanager`) para cambio de
-version de Python por sesion, inspirado en [fnm](https://github.com/Schniz/fnm).
+version de Python por sesion y global, inspirado en [fnm](https://github.com/Schniz/fnm).
 
 [![Crates.io](https://img.shields.io/crates/v/fpm?style=flat-square)](https://crates.io/crates/fpm)
 [![npm](https://img.shields.io/npm/v/fpm?style=flat-square)](https://www.npmjs.com/package/fpm)
@@ -26,8 +26,11 @@ version de Python por sesion, inspirado en [fnm](https://github.com/Schniz/fnm).
 
 - **Nativo de Windows**: Construido para Windows con cambio de shim basado en
   junctions NTFS.
-- **Cambio por sesion**: Cambia versiones de Python por sesion de shell sin
-  modificar el default global.
+- **Cambio por sesion**: `fpm use` cambia versiones de Python por sesion de
+  shell sin modificar el default global.
+- **Default global**: `fpm default` establece la version default global de
+  Python, persistiendo en `pymanager.json` y activandola en la sesion actual
+  inmediatamente.
 - **Soporte de archivos de version**: Lee `.python-version` y `pyproject.toml`
   (`requires-python` / dependencia `python` de Poetry) con matching de
   especificadores PEP 440.
@@ -116,8 +119,9 @@ fpm env --shell powershell | Out-String | Invoke-Expression
 |                              | `.python-version` o `pyproject.toml` si no se especifica version.  |
 | `fpm list`                   | Lista los runtimes de Python instalados.                           |
 | `fpm current`                | Imprime la version de Python actualmente activa.                   |
-| `fpm default [tag]`          | Lee o establece la version default de Python (escribe              |
-|                              | `pymanager.json`).                                                 |
+| `fpm default [tag]`          | Establece la version default global de Python (escribe             |
+|                              | `pymanager.json` y la activa en la sesion actual). Usa `--unset`    |
+|                              | para remover o `--dry-run` para previsualizar.                     |
 | `fpm env --shell powershell` | Emite un script de integracion de shell. Usa `--use-on-cd` para    |
 |                              | conmutacion automatica al cambiar de directorio.                   |
 | `fpm install <tag>`          | Instala una version de Python via `py install <tag>`.              |
@@ -134,8 +138,14 @@ fpm use 3.14
 # Imprimir la version activa
 fpm current
 
-# Establecer 3.13 como default (persiste entre sesiones via pymanager.json)
+# Establecer 3.13 como default global (persiste + activa inmediatamente)
 fpm default 3.13
+
+# Previsualizar establecer un default sin hacer cambios
+fpm default 3.14 --dry-run
+
+# Remover el default global
+fpm default --unset
 
 # Instalar una nueva version de Python
 fpm install 3.12

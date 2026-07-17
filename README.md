@@ -3,8 +3,8 @@
 # fpm (Fast Python Manager)
 
 A fast Python version manager for Windows, built in Rust. Wraps the official
-Python Install Manager (`py`/`pymanager`) for per-session Python version
-switching, inspired by [fnm](https://github.com/Schniz/fnm).
+Python Install Manager (`py`/`pymanager`) for per-session and global Python
+version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 
 [![Crates.io](https://img.shields.io/crates/v/fpm?style=flat-square)](https://crates.io/crates/fpm)
 [![npm](https://img.shields.io/npm/v/fpm?style=flat-square)](https://www.npmjs.com/package/fpm)
@@ -27,8 +27,11 @@ switching, inspired by [fnm](https://github.com/Schniz/fnm).
 ## Features
 
 - **Windows-native**: Built for Windows with NTFS junction-based shim switching.
-- **Per-session switching**: Switch Python versions per shell session without
-  touching the global default.
+- **Per-session switching**: `fpm use` switches Python versions per shell
+  session without touching the global default.
+- **Global default**: `fpm default` sets the global default Python version,
+  persisting to `pymanager.json` and activating it in the current session
+  immediately.
 - **Version file support**: Reads `.python-version` and `pyproject.toml`
   (`requires-python` / Poetry `python` dependency) with PEP 440 specifier
   matching.
@@ -116,7 +119,9 @@ fpm env --shell powershell | Out-String | Invoke-Expression
 |                              | `.python-version` or `pyproject.toml` if no version is given.       |
 | `fpm list`                   | List installed Python runtimes.                                    |
 | `fpm current`                | Print the currently active Python version.                         |
-| `fpm default [tag]`          | Read or set the default Python version (writes `pymanager.json`).  |
+| `fpm default [tag]`          | Set the global default Python version (writes `pymanager.json` and  |
+|                              | activates it in the current session). Use `--unset` to remove or   |
+|                              | `--dry-run` to preview.                                             |
 | `fpm env --shell powershell` | Emit a shell integration script. Use `--use-on-cd` for automatic   |
 |                              | switching on directory change.                                     |
 | `fpm install <tag>`          | Install a Python version via `py install <tag>`.                   |
@@ -133,8 +138,14 @@ fpm use 3.14
 # Print the active version
 fpm current
 
-# Set 3.13 as the default (persists across sessions via pymanager.json)
+# Set 3.13 as the global default (persists + activates immediately)
 fpm default 3.13
+
+# Preview setting a default without making changes
+fpm default 3.14 --dry-run
+
+# Remove the global default
+fpm default --unset
 
 # Install a new Python version
 fpm install 3.12

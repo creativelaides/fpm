@@ -39,3 +39,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOME: ${{ runner.temp }}
+          HUSKY: "0"
