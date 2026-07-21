@@ -356,6 +356,7 @@ mod tests {
 
     #[test]
     fn session_dir_from_env_returns_path_when_set() {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let session = temp.path().join("test_session");
         fs::create_dir_all(&session).unwrap();
@@ -368,6 +369,7 @@ mod tests {
 
     #[test]
     fn session_dir_from_env_errors_when_unset() {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         std::env::remove_var(config::FPM_MULTISHELL_PATH_ENV);
         let err = session_dir_from_env().unwrap_err();
         assert!(matches!(err, FpmError::ShimError(_)));

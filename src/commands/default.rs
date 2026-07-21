@@ -230,6 +230,7 @@ mod tests {
 
     #[test]
     fn default_set_writes_default_tag_and_activates_session() {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
         let config_path = fpm_dir.join("pymanager.json");
@@ -284,6 +285,7 @@ mod tests {
 
     #[test]
     fn default_set_creates_file_when_missing() {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
         let config_path = fpm_dir.join("pymanager.json");
@@ -458,6 +460,7 @@ mod tests {
 
     #[test]
     fn default_dry_run_valid_tag_prints_preview_without_side_effects() {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
         let config_path = fpm_dir.join("pymanager.json");

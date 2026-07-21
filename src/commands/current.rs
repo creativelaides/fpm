@@ -74,6 +74,7 @@ mod tests {
     where
         F: FnOnce(),
     {
+        let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let original = env::var_os(key);
         match value {
             Some(v) => env::set_var(key, v),
