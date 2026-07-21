@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use crate::config;
 use crate::error::FpmError;
-use crate::pymanager::PyManager;
+use crate::services::pymanager::PyManager;
 use crate::shim;
 
 pub mod current;
@@ -95,7 +95,7 @@ impl CommandContext {
 /// The canonicalized install directory so each caller can print its own
 /// message (`fpm use` prints "Using Python {tag}", `fpm default` prints
 /// "Default set to {tag}; session activated").
-pub fn activate_session<M: crate::pymanager::PyManagerOps>(
+pub fn activate_session<M: crate::services::pymanager::PyManagerOps>(
     pymanager: &mut M,
     tag: &str,
     session_dir: &Path,
@@ -223,15 +223,17 @@ mod tests {
         let install_dir = make_install_dir(fpm_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
-        let runtimes = vec![crate::pymanager::Runtime {
+        let runtimes = vec![crate::services::pymanager::Runtime {
             tag: "3.14-64".to_string(),
             version: "3.14.6".to_string(),
             executable: install_dir.join("python.exe"),
             is_default: true,
         }];
 
-        let mut mock =
-            crate::pymanager::MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = crate::services::pymanager::MockPyManager::new(
+            runtimes,
+            fpm_dir.join("pymanager.json"),
+        );
 
         let original_env = env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV);
         env::remove_var(config::PYTHON_MANAGER_DEFAULT_ENV);
@@ -267,15 +269,17 @@ mod tests {
 
         let session_dir = make_session_dir(fpm_dir);
 
-        let runtimes = vec![crate::pymanager::Runtime {
+        let runtimes = vec![crate::services::pymanager::Runtime {
             tag: "3.14-64".to_string(),
             version: "3.14.6".to_string(),
             executable: PathBuf::from("C:\\Python314\\python.exe"),
             is_default: true,
         }];
 
-        let mut mock =
-            crate::pymanager::MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = crate::services::pymanager::MockPyManager::new(
+            runtimes,
+            fpm_dir.join("pymanager.json"),
+        );
 
         let err = activate_session(&mut mock, "9.9", &session_dir).unwrap_err();
         assert!(matches!(err, FpmError::VersionNotInstalled { .. }));
@@ -295,15 +299,17 @@ mod tests {
         let install_dir = make_install_dir(fpm_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
-        let runtimes = vec![crate::pymanager::Runtime {
+        let runtimes = vec![crate::services::pymanager::Runtime {
             tag: "3.14-64".to_string(),
             version: "3.14.6".to_string(),
             executable: install_dir.join("python.exe"),
             is_default: true,
         }];
 
-        let mut mock =
-            crate::pymanager::MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = crate::services::pymanager::MockPyManager::new(
+            runtimes,
+            fpm_dir.join("pymanager.json"),
+        );
 
         let err = activate_session(&mut mock, "3.14-64", &invalid_session).unwrap_err();
         assert!(matches!(err, FpmError::ShimError(_)));

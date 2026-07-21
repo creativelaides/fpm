@@ -11,7 +11,7 @@ use std::process::Command;
 
 use crate::config;
 use crate::error::FpmError;
-use crate::pymanager::PyManagerOps;
+use crate::services::pymanager::PyManagerOps;
 
 /// Runs the `fpm current` command.
 ///
@@ -56,7 +56,7 @@ pub fn run<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pymanager::{MockPyManager, Runtime};
+    use crate::services::pymanager::{MockPyManager, Runtime};
     use std::env;
     use std::path::PathBuf;
 

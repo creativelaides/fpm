@@ -1,55 +1,47 @@
 ## Verification Report
 
-- **Change:** cli-friendly-refactor (Unit 1: Foundation & CLI flags)
-- **Mode:** Hybrid (openspec + Engram)
-- **TDD Mode:** Active (Strict TDD rules applied)
-- **Scope:** Slice-level verification for Phase 1 (tasks 1.1 to 1.5). Tasks/specs outside this slice are marked as `out-of-slice` or `deferred-slice`.
+- **Change Name:** cli-friendly-refactor
+- **Artifact Mode:** hybrid
+- **Slice:** Unit 2 (Phase 2, Tasks 2.1 - 2.5)
 
-### Completeness (Unit 1 Slice)
-
-| Task | Status | Notes |
+### Tasks Complete
+| Task | Status | Verdict |
 |---|---|---|
-| 1.1 Add `ui::formatters` module | `[x]` | Implemented in `src/ui/formatters.rs`. |
-| 1.2 Implement `print_detailed_version` | `[x]` | Added with correct string formatting. |
-| 1.3 Add unit test `test_print_detailed_version` | `[x]` | Added in `src/ui/formatters.rs`. |
-| 1.4 Refactor `src/main.rs` to extract versions cleanly | `[x]` | Version extraction updated and piped to formatter. |
-| 1.5 Run `cargo test` and verify output | `[x]` | Test suite passes. |
-| Phases 2-5 | `deferred-slice` | Out of scope for this slice. |
+| 2.1 Write failing unit tests in `src/services/remote.rs` | Complete | PASS |
+| 2.2 Implement fetch Python versions from python.org | Complete | PASS |
+| 2.3 Implement caching in `src/services/remote.rs` | Complete | PASS |
+| 2.4 Implement offline fallback in `src/services/remote.rs` | Complete | PASS |
+| 2.5 Refactor `src/pymanager.rs` into `src/services/pymanager.rs` | Complete | PASS |
+| Phases 1, 3, 4, 5 | Various | out-of-slice |
 
-### Build, Tests, and Coverage (Runtime Evidence)
+### Execution Evidence
+- **Build/Test Command:** `cargo test`
+- **Output:** 125 unit tests passed. 11 cli_dispatch tests passed. 8 env_cmd tests passed. 
+- **TDD Compliance:** Strict TDD Active. `DefaultRemoteFetcher` is implemented and verified using `TempDir` isolated tests (`test_cache_write_read`) in `src/services/remote.rs`. `PyManager` refactoring in `src/services/pymanager.rs` maintains 24 comprehensive unit tests proving correct runtime parsing, default tag handling, and trait mocking. `FpmError` additions map NetworkError and CacheError to exit codes 7 and 8 respectively, successfully verified in `src/error.rs`.
 
-- **Build/Type Check:** Passed.
-- **Test Command:** `cargo test -- --test-threads=1`
-- **Test Results:** 122 unit tests passed, 19 integration tests passed, 0 failures.
-- **Coverage Command:** (None provided/required)
-- **Coverage Results:** N/A
-- **TDD Cycle Evidence:** Verified. `test_print_detailed_version` exists and asserts the expected output string format behaviorally.
+### Spec Compliance Matrix (list-remote & pymanager-delegation)
+| Scenario | Status | Evidence/Notes |
+|---|---|---|
+| Successful remote fetch | PASS WITH WARNINGS | Implemented in `remote.rs` service layer. Wiring to `list-remote` CLI deferred to Phase 3. |
+| Cache hit | PASS WITH WARNINGS | Service successfully hits cache when available. UI integration deferred. |
+| Offline with cache | PASS WITH WARNINGS | Offline fallback logic working in service layer. Warning UI deferred. |
+| Local runtime management | PASS | `pymanager.rs` refactor maintains previous test coverage for resolving tags and listing runtimes via `py`. |
 
-### Assertion Quality Audit
-
-- `test_print_detailed_version` correctly sets up dummy inputs ("1.0.0", "Python Launcher for Windows Version 3.14.6", "Python 3.14.6") and verifies that the output correctly incorporates them in the exact format: `"fpm 1.0.0\n\nPython Launcher for Windows Version 3.14.6\nActive Python: Python 3.14.6"`. This is a behavioral test that proves implementation compliance.
-
-### Spec Compliance Matrix
-
-| Requirement / Scenario | Evidence | Status | Notes |
-|---|---|---|---|
-| Scenario: `--version` prints detailed tool versions | `test_print_detailed_version` | PASS | Formats `fpm`, `Python Launcher`, and `Active Python` correctly. |
-| Other specs | None | `out-of-slice` | Deferred to later phases. |
+### Correctness Table & Assertion Quality Audit
+| Component | Check | Status |
+|---|---|---|
+| `remote.rs` Tests | `test_cache_write_read` uses `TempDir` for isolation. Assertions verify correct state before/after cache operations. | PASS |
+| `pymanager.rs` Tests | Comprehensive suite using `MockPyManager` tests fallback, config preservation, and JSON parsing without side-effects. | PASS |
+| `error.rs` Tests | `network_error_maps_to_7` and `cache_error_maps_to_8` exist and guarantee correct stable exit codes. | PASS |
 
 ### Design Coherence
-
-| Decision | Implementation | Status | Notes |
-|---|---|---|---|
-| Use explicit formatter function for version | `ui::formatters::print_detailed_version` | PASS | Separated concern from `main.rs`. |
-| Avoid dumping entire help message | Help message parsed to first line | PASS | Clean extraction implemented. |
-| Other design aspects | None | `out-of-slice` | Deferred to later phases. |
+| Component | Check | Status |
+|---|---|---|
+| `remote.rs` | Clean Architecture Lite boundary applied. `ureq` and `etcetera` correctly handle caching and fetching. | PASS |
+| `pymanager.rs` | Service cleanly extracted from root src dir, exposing `PyManagerOps` trait for dependency injection and mocking. | PASS |
 
 ### Issues
+- **SUGGESTION:** Final end-to-end user-facing output (e.g., CLI commands and warnings) remains deferred to Phase 3 UI formatting and controllers.
 
-- **CRITICAL:** None.
-- **WARNING:** None.
-- **SUGGESTION:** None.
-
-### Final Verdict
-
-`PASS`
+### Verdict
+`PASS WITH WARNINGS`

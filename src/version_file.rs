@@ -19,7 +19,7 @@ use std::str::FromStr;
 use pep440_rs::{Version, VersionSpecifiers};
 
 use crate::error::FpmError;
-use crate::pymanager::{PyManagerOps, Runtime};
+use crate::services::pymanager::{PyManagerOps, Runtime};
 
 /// Resolves a Python version tag for `fpm use` (no explicit argument).
 ///
@@ -193,7 +193,7 @@ fn reduce_specifier(specifier: &str, runtimes: &[Runtime]) -> Result<Option<Stri
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pymanager::MockPyManager;
+    use crate::services::pymanager::MockPyManager;
     use std::fs;
     use std::path::PathBuf;
 

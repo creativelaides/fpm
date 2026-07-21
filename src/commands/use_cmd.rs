@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use crate::commands::activate_session;
 use crate::config;
 use crate::error::FpmError;
-use crate::pymanager::PyManagerOps;
+use crate::services::pymanager::PyManagerOps;
 use crate::shim;
 use crate::version_file;
 
@@ -109,7 +109,7 @@ pub fn session_dir_from_env() -> Result<PathBuf, FpmError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pymanager::{MockPyManager, Runtime};
+    use crate::services::pymanager::{MockPyManager, Runtime};
     use std::fs;
     use std::path::PathBuf;
 
