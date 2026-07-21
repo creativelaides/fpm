@@ -1,16 +1,16 @@
 <div align="center">
 
-# fpm (Fast Python Manager)
+# fpy (Friendly Python)
 
 A fast Python version manager for Windows, built in Rust. Wraps the official
 Python Install Manager (`py`/`pymanager`) for per-session and global Python
 version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 
-[![Crates.io](https://img.shields.io/crates/v/fpm?style=flat-square)](https://crates.io/crates/fpm)
-[![npm](https://img.shields.io/npm/v/fpm?style=flat-square)](https://www.npmjs.com/package/fpm)
+[![Crates.io](https://img.shields.io/crates/v/fpy?style=flat-square)](https://crates.io/crates/fpy)
+[![npm](https://img.shields.io/npm/v/@kwak-projects/fpy?style=flat-square)](https://www.npmjs.com/package/@kwak-projects/fpy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/creativelaides/fpm/ci.yml?style=flat-square&label=CI)](https://github.com/creativelaides/fpm/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/creativelaides/fpm?style=flat-square&label=Release)](https://github.com/creativelaides/fpm/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/creativelaides/fpy/ci.yml?style=flat-square&label=CI)](https://github.com/creativelaides/fpy/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/creativelaides/fpy?style=flat-square&label=Release)](https://github.com/creativelaides/fpy/releases/latest)
 
 <br>
 
@@ -27,9 +27,9 @@ version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 ## Features
 
 - **Windows-native**: Built for Windows with NTFS junction-based shim switching.
-- **Per-session switching**: `fpm use` switches Python versions per shell
+- **Per-session switching**: `fpy use` switches Python versions per shell
   session without touching the global default.
-- **Global default**: `fpm default` sets the global default Python version,
+- **Global default**: `fpy default` sets the global default Python version,
   persisting to `pymanager.json` and activating it in the current session
   immediately.
 - **Version file support**: Reads `.python-version` and `pyproject.toml`
@@ -53,8 +53,8 @@ version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 ### Build from source
 
 ```sh
-git clone https://github.com/creativelaides/fpm.git
-cd fpm
+git clone https://github.com/creativelaides/fpy.git
+cd fpy
 cargo build --release
 ```
 
@@ -66,7 +66,7 @@ $env:PATH += ";$PWD\target\release"
 ```
 
 > **Using cargo install (future)**: Once published to crates.io, you'll be able
-> to run `cargo install fpm` to install the binary directly.
+> to run `cargo install fpy` to install the binary directly.
 
 ## Shell Setup
 
@@ -75,10 +75,10 @@ $env:PATH += ";$PWD\target\release"
 Add the following to the end of your PowerShell profile file:
 
 ```powershell
-fpm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
+fpy env --use-on-cd --shell powershell | Out-String | Invoke-Expression
 ```
 
-This evaluates the `fpm env` script every time a new shell starts, setting up
+This evaluates the `fpy env` script every time a new shell starts, setting up
 `FPM_DIR`, prepending the session shim directory to `PATH`, and installing
 the `Set-Location` hook for automatic version switching on `cd`.
 
@@ -106,7 +106,7 @@ Invoke-Item $profile
 If you prefer manual switching (no automatic `cd` hook), omit `--use-on-cd`:
 
 ```powershell
-fpm env --shell powershell | Out-String | Invoke-Expression
+fpy env --shell powershell | Out-String | Invoke-Expression
 ```
 
 ## Usage
@@ -115,96 +115,96 @@ fpm env --shell powershell | Out-String | Invoke-Expression
 
 | Command                      | Description                                                        |
 | ---------------------------- | ------------------------------------------------------------------ |
-| `fpm use [version]`          | Switch to a Python version for this session. Resolves from         |
+| `fpy use [version]`          | Switch to a Python version for this session. Resolves from         |
 |                              | `.python-version` or `pyproject.toml` if no version is given.       |
-| `fpm list`                   | List installed Python runtimes.                                    |
-| `fpm list-remote [--pre]`    | Fetches python.org versions, filters pre-releases unless `--pre`   |
+| `fpy list`                   | List installed Python runtimes.                                    |
+| `fpy list-remote [--pre]`    | Fetches python.org versions, filters pre-releases unless `--pre`   |
 |                              | is specified, caches for 24 hours locally using etcetera in JSON.  |
-| `fpm current`                | Print the currently active Python version.                         |
-| `fpm default [tag]`          | Set the global default Python version (writes `pymanager.json` and  |
+| `fpy current`                | Print the currently active Python version.                         |
+| `fpy default [tag]`          | Set the global default Python version (writes `pymanager.json` and  |
 |                              | activates it in the current session). Use `--unset` to remove or   |
 |                              | `--dry-run` to preview.                                             |
-| `fpm env --shell powershell` | Emit a shell integration script. Use `--use-on-cd` for automatic   |
+| `fpy env --shell powershell` | Emit a shell integration script. Use `--use-on-cd` for automatic   |
 |                              | switching on directory change.                                     |
-| `fpm install <tag>`          | Install a Python version via `py install <tag>`.                   |
-| `fpm --version`              | Displays fpm crate version, launcher version, and active python version. |
+| `fpy install <tag>`          | Install a Python version via `py install <tag>`.                   |
+| `fpy --version`              | Displays fpy crate version, launcher version, and active python version. |
 
 ### Examples
 
 ```sh
 # List installed Python versions
-fpm list
+fpy list
 
 # Switch to Python 3.14 for this session
-fpm use 3.14
+fpy use 3.14
 
 # Print the active version
-fpm current
+fpy current
 
 # Set 3.13 as the global default (persists + activates immediately)
-fpm default 3.13
+fpy default 3.13
 
 # Preview setting a default without making changes
-fpm default 3.14 --dry-run
+fpy default 3.14 --dry-run
 
 # Remove the global default
-fpm default --unset
+fpy default --unset
 
 # Install a new Python version
-fpm install 3.12
+fpy install 3.12
 
 # Pass through to py.exe — all unrecognized args forward verbatim
-fpm -m http.server 8000
-fpm script.py
+fpy -m http.server 8000
+fpy script.py
 ```
 
 ### Version file resolution
 
-`fpm use` with no arguments walks up from the current directory looking for:
+`fpy use` with no arguments walks up from the current directory looking for:
 
 1. `.python-version` — contains a version tag (e.g. `3.14` or `3.14-64`).
 2. `pyproject.toml` — `[project] requires-python` (PEP 621) or
    `[tool.poetry.dependencies] python` with a PEP 440 specifier (e.g.
    `>=3.12`, `~3.13`, `==3.14.*`).
 
-The first match wins. For specifiers, fpm reduces against the installed
+The first match wins. For specifiers, fpy reduces against the installed
 runtime list and selects the highest matching version.
 
 ```sh
 # Create a .python-version file
 echo "3.14" > .python-version
 
-# Now `fpm use` (no args) switches to 3.14
-fpm use
+# Now `fpy use` (no args) switches to 3.14
+fpy use
 ```
 
 ## Configuration
 
 ### FPM_DIR
 
-The fpm data directory. Defaults to `%LocalAppData%\fpm`. Override with the
+The fpy data directory. Defaults to `%LocalAppData%\fpy`. Override with the
 `FPM_DIR` environment variable:
 
 ```powershell
-$env:FPM_DIR = "D:\my-fpm-data"
+$env:FPM_DIR = "D:\my-fpy-data"
 ```
 
 Session shim directories are created under `FPM_DIR/multishells/<session-id>/`.
 
 ### PYTHON_MANAGER_DEFAULT
 
-Set in-process by `fpm use` to mark the active version for the current
-session. Read by `fpm current` as the primary source of truth.
+Set in-process by `fpy use` to mark the active version for the current
+session. Read by `fpy current` as the primary source of truth.
 
 ### pymanager.json
 
-Located at `%AppData%\Python\pymanager.json`. Managed by `fpm default` (and
-PyManager itself). `fpm use` does **not** write to this file — switching is
+Located at `%AppData%\Python\pymanager.json`. Managed by `fpy default` (and
+PyManager itself). `fpy use` does **not** write to this file — switching is
 session-only.
 
 ## Session directory lifecycle
 
-Each `fpm env` invocation creates a unique session directory under
+Each `fpy env` invocation creates a unique session directory under
 `FPM_DIR/multishells/<pid>_<random>/`. The generated PowerShell script
 registers a `PowerShell.Exiting` engine event that best-effort removes the
 session directory on clean shell exit.

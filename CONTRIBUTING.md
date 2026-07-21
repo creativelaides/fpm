@@ -1,6 +1,6 @@
-# Contributing to fpm
+# Contributing to fpy
 
-Thanks for your interest in contributing to fpm! This guide covers everything
+Thanks for your interest in contributing to fpy! This guide covers everything
 you need to get started.
 
 ## Prerequisites
@@ -15,8 +15,8 @@ you need to get started.
 
 ```sh
 # Clone the repository
-git clone https://github.com/creativelaides/fpm.git
-cd fpm
+git clone https://github.com/creativelaides/fpy.git
+cd fpy
 
 # Install Node.js dev dependencies (husky, commitlint, commitizen, changesets)
 pnpm install
@@ -62,7 +62,7 @@ All unit tests must pass. The pre-commit hook runs the full test suite.
 
 ## Committing changes
 
-fpm uses [Conventional Commits](https://www.conventionalcommits.org/) enforced
+fpy uses [Conventional Commits](https://www.conventionalcommits.org/) enforced
 by [commitlint](https://commitlint.js.org/). The commit message format is:
 
 ```
@@ -109,7 +109,7 @@ feat(config): add FPM_DIR environment variable override
 
 ## Changesets
 
-fpm uses [Changesets](https://github.com/changesets/changesets) to manage
+fpy uses [Changesets](https://github.com/changesets/changesets) to manage
 versions and changelogs.
 
 ### Adding a changeset
@@ -122,7 +122,7 @@ pnpm changeset
 
 This prompts you to:
 
-1. Select the package (only `fpm` for now).
+1. Select the package (only `fpy` for now).
 2. Choose the bump type (`major`, `minor`, or `patch`).
 3. Write a human-readable summary (goes into the changelog).
 
@@ -141,7 +141,7 @@ GitHub Actions runs on every pull request and push to `main`:
 | Clippy       | `cargo clippy -- -D warnings`     | `windows-latest`  |
 | Unit tests   | `cargo test`                     | `windows-latest`  |
 
-fpm is Windows-only in its first slice, so all CI jobs run on Windows.
+fpy is Windows-only in its first slice, so all CI jobs run on Windows.
 
 ### Release flow
 
