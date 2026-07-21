@@ -1,11 +1,11 @@
 schema: spec-driven
 
 context: |
-  Tech stack: undetected (greenfield project — no source code, package manifests, or build files present)
-  Architecture: none (greenfield)
-  Testing: none (no test framework or runner detected)
-  Style: none (greenfield)
-  VCS: not a git repository (git init required before commits/PRs)
+  Tech stack: Rust (channel 1.96.0) with Cargo. Node.js/pnpm for release tools (changesets, commitlint, husky).
+  Architecture: Windows-native CLI wrapper around PyManager for Python version switching.
+  Testing: cargo test (with assert_cmd/predicates for integration testing).
+  Style: rustfmt (max_width 100), clippy (MSRV 1.96.0).
+  VCS: git repository.
 
 rules:
   proposal:
@@ -21,11 +21,11 @@ rules:
     - Keep tasks completable in one session
   apply:
     - Follow existing code patterns
-    tdd: false
-    test_command: ""
+    tdd: true
+    test_command: "cargo test"
   verify:
-    test_command: ""
-    build_command: ""
+    test_command: "cargo test"
+    build_command: "cargo build"
     coverage_threshold: 0
   archive:
     - Warn before merging destructive deltas

@@ -10,8 +10,10 @@ mod commands;
 mod config;
 mod error;
 mod pymanager;
+pub mod services;
 mod shell;
 mod shim;
+pub mod ui;
 mod version_file;
 
 use std::process::ExitCode;
@@ -23,6 +25,29 @@ use crate::cli::{Cli, Commands, ShellKind};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
+
+    if cli.version {
+        let fpm_version = env!("CARGO_PKG_VERSION");
+        // Get py --help output to extract launcher version
+        let py_help = std::process::Command::new("py")
+            .arg("--help")
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+            .unwrap_or_else(|_| "Unavailable".to_string());
+        let launcher_version = py_help.lines().next().unwrap_or("Unavailable");
+
+        // Get py --version output
+        let py_version = std::process::Command::new("py")
+            .arg("--version")
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+            .unwrap_or_else(|_| "Unavailable".to_string());
+
+        let output =
+            ui::formatters::print_detailed_version(fpm_version, launcher_version, &py_version);
+        println!("{}", output);
+        return ExitCode::SUCCESS;
+    }
 
     match dispatch(cli) {
         Ok(code) => ExitCode::from(code as u8),
@@ -64,6 +89,11 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
         Some(Commands::List) => {
             let mut ctx = commands::CommandContext::from_env()?;
             commands::list::run(&mut ctx.pymanager)
+        }
+
+        Some(Commands::ListRemote) => {
+            println!("ListRemote not yet implemented");
+            Ok(0)
         }
 
         Some(Commands::Current) => {

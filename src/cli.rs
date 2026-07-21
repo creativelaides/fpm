@@ -12,10 +12,14 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[command(
     name = "fpm",
-    version,
+    disable_version_flag = true,
     about = "Per-session Python version switching via PyManager"
 )]
 pub struct Cli {
+    /// Print version information
+    #[arg(short = 'V', long = "version")]
+    pub version: bool,
+
     /// Subcommand to run. If absent or unrecognized, args forward to py.exe.
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -43,6 +47,9 @@ pub enum Commands {
 
     /// List installed Python runtimes.
     List,
+
+    /// List available Python versions from python.org.
+    ListRemote,
 
     /// Print the currently active Python version.
     Current,
