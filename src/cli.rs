@@ -8,10 +8,10 @@
 
 use clap::{Parser, Subcommand};
 
-/// fpm — a Windows-native Rust wrapper around PyManager.
+/// fpy — a Windows-native Rust wrapper around PyManager.
 #[derive(Parser, Debug)]
 #[command(
-    name = "fpm",
+    name = "fpy",
     disable_version_flag = true,
     about = "Per-session Python version switching via PyManager"
 )]

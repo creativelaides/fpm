@@ -8,7 +8,7 @@ pub fn print_detailed_version(
     python_version: &str,
 ) -> String {
     format!(
-        "fpm {}\n\n{}\nActive Python: {}",
+        "fpy {}\n\n{}\nActive Python: {}",
         cli_version,
         launcher_version.trim(),
         python_version.trim()
@@ -171,7 +171,7 @@ mod tests {
         );
         assert_eq!(
             out,
-            "fpm 1.0.0\n\nPython Launcher for Windows Version 3.14.6\nActive Python: Python 3.14.6"
+            "fpy 1.0.0\n\nPython Launcher for Windows Version 3.14.6\nActive Python: Python 3.14.6"
         );
     }
 

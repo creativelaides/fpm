@@ -20,7 +20,7 @@ fn use_explicit_version_switches_and_prints_message() {
 
     // Create the session dir via fpm env first, then capture its path.
     // We need FPM_MULTISHELL_PATH to be set for `fpm use`.
-    let env_output = Command::cargo_bin("fpm")
+    let env_output = Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
@@ -44,7 +44,7 @@ fn use_explicit_version_switches_and_prints_message() {
         .to_string();
 
     // Now run `fpm use 3.14` with FPM_MULTISHELL_PATH set.
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .env("FPM_MULTISHELL_PATH", &session_dir)
@@ -63,7 +63,7 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
     let temp_path = temp.path().to_str().unwrap();
 
     // Setup: run fpm env to get a session dir.
-    let env_output = Command::cargo_bin("fpm")
+    let env_output = Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
@@ -84,7 +84,7 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
         .to_string();
 
     // First, switch to 3.14 normally.
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .env("FPM_MULTISHELL_PATH", &session_dir)
@@ -93,7 +93,7 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
         .success();
 
     // Now run with --silent-if-unchanged — should exit 0 with no stdout.
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .env("FPM_MULTISHELL_PATH", &session_dir)
@@ -112,7 +112,7 @@ fn use_nonexistent_version_exits_code_2() {
     let temp_path = temp.path().to_str().unwrap();
 
     // Setup session dir.
-    let env_output = Command::cargo_bin("fpm")
+    let env_output = Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
@@ -133,7 +133,7 @@ fn use_nonexistent_version_exits_code_2() {
         .to_string();
 
     // Use a version that definitely is not installed.
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .env("FPM_MULTISHELL_PATH", &session_dir)
@@ -156,7 +156,7 @@ fn use_no_args_reads_python_version_file() {
     std::fs::write(temp.path().join(".python-version"), "3.14\n").unwrap();
 
     // Setup session dir.
-    let env_output = Command::cargo_bin("fpm")
+    let env_output = Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
@@ -177,7 +177,7 @@ fn use_no_args_reads_python_version_file() {
         .to_string();
 
     // Run `fpm use` (no version arg) from the temp dir (has .python-version).
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .current_dir(temp.path())
         .env("FPM_DIR", temp_path)
@@ -199,7 +199,7 @@ fn use_no_args_no_version_file_exits_code_3() {
     // No .python-version or pyproject.toml in temp dir.
 
     // Setup session dir.
-    let env_output = Command::cargo_bin("fpm")
+    let env_output = Command::cargo_bin("fpy")
         .unwrap()
         .env("FPM_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
@@ -220,7 +220,7 @@ fn use_no_args_no_version_file_exits_code_3() {
         .to_string();
 
     // Run `fpm use` with no args — should fail with code 3.
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .current_dir(temp.path())
         .env("FPM_DIR", temp_path)

@@ -12,30 +12,30 @@ use predicates::str::contains;
 
 #[test]
 fn version_prints_detailed_version() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("--version")
         .assert()
         .success()
-        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))))
+        .stdout(contains(format!("fpy {}", env!("CARGO_PKG_VERSION"))))
         .stdout(contains("Active Python:"));
 }
 
 #[test]
 fn version_short_flag_also_works() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("-V")
         .assert()
         .success()
-        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))));
+        .stdout(contains(format!("fpy {}", env!("CARGO_PKG_VERSION"))));
 }
 
 // ── --help ────────────────────────────────────────────────────────────────
 
 #[test]
 fn help_exits_zero_and_lists_subcommands() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("--help")
         .assert()
@@ -50,7 +50,7 @@ fn help_exits_zero_and_lists_subcommands() {
 
 #[test]
 fn help_short_flag_also_works() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("-h")
         .assert()
@@ -61,7 +61,7 @@ fn help_short_flag_also_works() {
 
 #[test]
 fn list_help_exits_zero() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["list", "--help"])
         .assert()
@@ -71,7 +71,7 @@ fn list_help_exits_zero() {
 
 #[test]
 fn list_remote_help_exits_zero() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["list-remote", "--help"])
         .assert()
@@ -81,7 +81,7 @@ fn list_remote_help_exits_zero() {
 
 #[test]
 fn list_remote_runs() {
-    let assert = Command::cargo_bin("fpm")
+    let assert = Command::cargo_bin("fpy")
         .unwrap()
         .arg("list-remote")
         .assert();
@@ -105,7 +105,7 @@ fn list_remote_runs() {
 
 #[test]
 fn env_help_shows_shell_and_use_on_cd_flags() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["env", "--help"])
         .assert()
@@ -116,7 +116,7 @@ fn env_help_shows_shell_and_use_on_cd_flags() {
 
 #[test]
 fn use_help_shows_silent_if_unchanged_flag() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["use", "--help"])
         .assert()
@@ -126,7 +126,7 @@ fn use_help_shows_silent_if_unchanged_flag() {
 
 #[test]
 fn current_help_exits_zero() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["current", "--help"])
         .assert()
@@ -136,7 +136,7 @@ fn current_help_exits_zero() {
 
 #[test]
 fn default_help_exits_zero() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["default", "--help"])
         .assert()
@@ -146,7 +146,7 @@ fn default_help_exits_zero() {
 
 #[test]
 fn install_help_exits_zero() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .args(["install", "--help"])
         .assert()
@@ -166,7 +166,7 @@ fn unrecognized_subcommand_does_not_crash() {
     // `fpm foobar` — py.exe will try to open "foobar" as a script and fail.
     // If py is missing, fpm exits 1. If py is present, py exits non-zero.
     // Either way, fpm must not panic or crash.
-    let mut cmd = Command::cargo_bin("fpm").unwrap();
+    let mut cmd = Command::cargo_bin("fpy").unwrap();
     cmd.arg("foobar");
     let assert = cmd.assert();
 

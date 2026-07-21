@@ -15,7 +15,7 @@ use predicates::str::contains;
 #[test]
 #[ignore]
 fn passthrough_forwards_list_to_py() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("--list")
         .assert()
@@ -30,7 +30,7 @@ fn passthrough_forwards_list_to_py() {
 #[test]
 #[ignore]
 fn passthrough_forwards_version_to_py() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .arg("-0p")
         .assert()
@@ -46,7 +46,7 @@ fn passthrough_forwards_multiple_args() {
     // py -3.13 --version forwards args to the 3.13 interpreter's --version.
     // We just verify the process runs and exits without fpm crashing.
     // We don't assert on exit code — py may or may not be installed.
-    let mut cmd = Command::cargo_bin("fpm").unwrap();
+    let mut cmd = Command::cargo_bin("fpy").unwrap();
     cmd.args(["-V:3.14", "--version"]);
     let _ = cmd.assert();
 }
@@ -61,7 +61,7 @@ fn passthrough_forwards_multiple_args() {
 #[test]
 #[ignore]
 fn passthrough_py_missing_exits_nonzero_with_stderr() {
-    Command::cargo_bin("fpm")
+    Command::cargo_bin("fpy")
         .unwrap()
         .env("PATH", "")
         .arg("script.py")
