@@ -98,13 +98,12 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
             Ok(0)
         }
 
-        Some(Commands::ListRemote) => {
+        Some(Commands::ListRemote { pre }) => {
             let fetcher = crate::services::remote::DefaultRemoteFetcher::new()?;
             let (versions, offline) = commands::list_remote::run(&fetcher)?;
-            // Assuming we pass `false` for show_pre for now (would need CLI flag)
             print!(
                 "{}",
-                ui::formatters::print_remote_versions(&versions, false, offline)
+                ui::formatters::print_remote_versions(&versions, pre, offline)
             );
             Ok(0)
         }

@@ -118,6 +118,8 @@ fpm env --shell powershell | Out-String | Invoke-Expression
 | `fpm use [version]`          | Switch to a Python version for this session. Resolves from         |
 |                              | `.python-version` or `pyproject.toml` if no version is given.       |
 | `fpm list`                   | List installed Python runtimes.                                    |
+| `fpm list-remote [--pre]`    | Fetches python.org versions, filters pre-releases unless `--pre`   |
+|                              | is specified, caches for 24 hours locally using etcetera in JSON.  |
 | `fpm current`                | Print the currently active Python version.                         |
 | `fpm default [tag]`          | Set the global default Python version (writes `pymanager.json` and  |
 |                              | activates it in the current session). Use `--unset` to remove or   |
@@ -125,6 +127,7 @@ fpm env --shell powershell | Out-String | Invoke-Expression
 | `fpm env --shell powershell` | Emit a shell integration script. Use `--use-on-cd` for automatic   |
 |                              | switching on directory change.                                     |
 | `fpm install <tag>`          | Install a Python version via `py install <tag>`.                   |
+| `fpm --version`              | Displays fpm crate version, launcher version, and active python version. |
 
 ### Examples
 

@@ -11,13 +11,14 @@ use predicates::str::contains;
 // ── --version ─────────────────────────────────────────────────────────────
 
 #[test]
-fn version_prints_crate_version() {
+fn version_prints_detailed_version() {
     Command::cargo_bin("fpm")
         .unwrap()
         .arg("--version")
         .assert()
         .success()
-        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))));
+        .stdout(contains(format!("fpm {}", env!("CARGO_PKG_VERSION"))))
+        .stdout(contains("Active Python:"));
 }
 
 #[test]
@@ -66,6 +67,40 @@ fn list_help_exits_zero() {
         .assert()
         .success()
         .stdout(contains("List installed Python runtimes"));
+}
+
+#[test]
+fn list_remote_help_exits_zero() {
+    Command::cargo_bin("fpm")
+        .unwrap()
+        .args(["list-remote", "--help"])
+        .assert()
+        .success()
+        .stdout(contains("--pre"));
+}
+
+#[test]
+fn list_remote_runs() {
+    let assert = Command::cargo_bin("fpm")
+        .unwrap()
+        .arg("list-remote")
+        .assert();
+
+    let output = assert.get_output();
+    let code = output.status.code().unwrap_or(-1);
+
+    // Either succeeds and prints the table, or fails with 7 (CacheError) or 8 (NetworkError)
+    if code == 0 {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains("VERSION"));
+        assert!(stdout.contains("RELEASE DATE"));
+    } else {
+        assert!(
+            code == 7 || code == 8,
+            "Expected success or network/cache error, got {}",
+            code
+        );
+    }
 }
 
 #[test]
