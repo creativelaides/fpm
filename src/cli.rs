@@ -49,7 +49,11 @@ pub enum Commands {
     List,
 
     /// List available Python versions from python.org.
-    ListRemote,
+    ListRemote {
+        /// Include pre-release versions (alpha, beta, rc).
+        #[arg(long)]
+        pre: bool,
+    },
 
     /// Print the currently active Python version.
     Current,

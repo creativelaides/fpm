@@ -133,11 +133,8 @@ fn run_set<M: PyManagerOps>(
     pymanager.write_default(tag)?;
 
     if let Err(activate_err) = activate_session(pymanager, tag, session_dir) {
-        eprintln!(
-            "Default set to {tag} but session activation failed: {activate_err}. Run `fpm use {tag}` to activate."
-        );
         return Err(FpmError::ShimError(std::io::Error::other(format!(
-            "session activation failed for {tag}"
+            "Default set to {tag} but session activation failed: {activate_err}. Run `fpm use {tag}` to activate."
         ))));
     }
 
@@ -350,7 +347,7 @@ mod tests {
     }
 
     #[test]
-    fn default_set_partial_failure_prints_warning_and_exits_5() {
+    fn default_set_partial_failure_returns_shim_error() {
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
         let config_path = fpm_dir.join("pymanager.json");

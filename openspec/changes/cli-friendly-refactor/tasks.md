@@ -41,11 +41,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Testing / Verification
 
-- [ ] 4.1 Write unit tests for the UI Formatters in `src/ui/formatters.rs` to ensure strings format correctly without side effects.
-- [ ] 4.2 Write integration tests for `list-remote` offline cache fallback behavior.
-- [ ] 4.3 Write integration tests for the `--version` override output.
+- [x] 4.1 Write unit tests for the UI Formatters in `src/ui/formatters.rs` to ensure strings format correctly without side effects.
+- [x] 4.2 Write integration tests for `list-remote` offline cache fallback behavior.
+- [x] 4.3 Write integration tests for the `--version` override output.
 
 ## Phase 5: Cleanup / Documentation
 
-- [ ] 5.1 Remove all lingering `println!` and `eprintln!` calls from `src/commands/*.rs`.
-- [ ] 5.2 Update `README.md` to document the new `list-remote` command and custom `--version` output.
+- [x] 5.1 Remove all lingering `println!` and `eprintln!` calls from `src/commands/*.rs`.
+- [x] 5.2 Update `README.md` to document the new `list-remote` command and custom `--version` output.

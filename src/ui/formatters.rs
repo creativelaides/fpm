@@ -205,4 +205,62 @@ mod tests {
         let output = format_local_runtimes(&[]);
         assert_eq!(output, "No local runtimes found.");
     }
+
+    #[test]
+    fn test_format_current_version() {
+        assert_eq!(
+            format_current_version(Some("3.12"), Some("Python 3.12.0")),
+            "Python 3.12.0 (tag: 3.12)"
+        );
+        assert_eq!(
+            format_current_version(None, Some("Python 3.11.0")),
+            "Python 3.11.0"
+        );
+        assert_eq!(
+            format_current_version(Some("3.10"), None),
+            "Python 3.10 (configured, py -V unavailable)"
+        );
+        assert_eq!(
+            format_current_version(None, None),
+            "No default Python configured."
+        );
+    }
+
+    #[test]
+    fn test_format_default_read() {
+        assert_eq!(format_default_read(Some("3.12")), "3.12");
+        assert_eq!(format_default_read(None), "No default Python configured.");
+    }
+
+    #[test]
+    fn test_format_default_unset() {
+        assert_eq!(format_default_unset(true), "Default Python unset.");
+        assert_eq!(format_default_unset(false), "No default was configured.");
+    }
+
+    #[test]
+    fn test_format_default_dry_run() {
+        let p = Path::new("/fake/path");
+        let out = format_default_dry_run("3.12", "3.12.0", p);
+        assert_eq!(
+            out,
+            format!(
+                "Would set default to 3.12 and activate Python 3.12.0 at {}",
+                p.display()
+            )
+        );
+    }
+
+    #[test]
+    fn test_format_default_set_success() {
+        assert_eq!(
+            format_default_set_success("3.12"),
+            "Default Python set to 3.12. Using Python 3.12."
+        );
+    }
+
+    #[test]
+    fn test_format_use_success() {
+        assert_eq!(format_use_success("3.12"), "Using Python 3.12");
+    }
 }
