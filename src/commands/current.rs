@@ -19,7 +19,9 @@ use crate::services::pymanager::PyManagerOps;
 ///    `pymanager.json` `default_tag`.
 /// 2. Spawn `py -V` to get the actual version string from PyManager.
 /// 3. Print the result.
-pub fn run<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
+pub fn run<M: PyManagerOps>(
+    pymanager: &mut M,
+) -> Result<(Option<String>, Option<String>), FpmError> {
     // Determine which tag is "active" — session override first, then config.
     let active_tag = match std::env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV) {
         Some(v) => Some(v.to_string_lossy().into_owned()),
@@ -33,24 +35,15 @@ pub fn run<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
         .map_err(|_| FpmError::PyNotFound)?;
 
     let version_line = String::from_utf8_lossy(&output.stdout);
-    let version_line = version_line.trim();
+    let version_line = version_line.trim().to_string();
 
-    if version_line.is_empty() {
-        // py -V failed or produced no output.
-        if let Some(tag) = active_tag {
-            println!("Python {tag} (configured, py -V unavailable)");
-        } else {
-            println!("No default Python configured.");
-        }
-        return Ok(if output.status.success() { 0 } else { 1 });
-    }
+    let py_version_line = if version_line.is_empty() {
+        None
+    } else {
+        Some(version_line)
+    };
 
-    match active_tag {
-        Some(tag) => println!("{version_line} (tag: {tag})"),
-        None => println!("{version_line}"),
-    }
-
-    Ok(0)
+    Ok((active_tag, py_version_line))
 }
 
 #[cfg(test)]
@@ -94,15 +87,13 @@ mod tests {
 
         // Set the env var so current picks it up.
         with_env(config::PYTHON_MANAGER_DEFAULT_ENV, Some("3.14"), || {
-            let code = run(&mut mock).unwrap_or_else(|e| {
-                // If py is missing, the function returns PyNotFound, which is
-                // valid. We just verify the env-var path was taken (no crash).
+            let res = run(&mut mock).unwrap_or_else(|e| {
                 if matches!(e, FpmError::PyNotFound) {
-                    return 1;
+                    return (Some("3.14".to_string()), None);
                 }
                 panic!("unexpected error: {e:?}");
             });
-            assert!(code == 0 || code == 1);
+            assert_eq!(res.0, Some("3.14".to_string()));
         });
     }
 
@@ -119,7 +110,7 @@ mod tests {
             let result = run(&mut mock);
             // Either py exists (Ok) or PyNotFound — both are fine.
             match result {
-                Ok(code) => assert!(code == 0 || code == 1),
+                Ok((active, _)) => assert_eq!(active, Some("3.13".to_string())),
                 Err(e) => assert!(matches!(e, FpmError::PyNotFound)),
             }
         });
@@ -136,7 +127,7 @@ mod tests {
         with_env(config::PYTHON_MANAGER_DEFAULT_ENV, None, || {
             let result = run(&mut mock);
             match result {
-                Ok(code) => assert!(code == 0 || code == 1),
+                Ok((active, _)) => assert_eq!(active, None),
                 Err(e) => assert!(matches!(e, FpmError::PyNotFound)),
             }
         });

@@ -12,60 +12,10 @@ use crate::services::pymanager::PyManagerOps;
 /// Runs the `fpm list` command.
 ///
 /// Fetches the runtime list from the PyManager client and renders a table.
-pub fn run<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
-    let runtimes = pymanager.list_runtimes()?;
-
-    if runtimes.is_empty() {
-        println!("No Python runtimes installed.");
-        println!("Install one with: fpm install <version>");
-        return Ok(0);
-    }
-
-    // Compute column widths for alignment.
-    let version_w = runtimes
-        .iter()
-        .map(|r| r.version.len())
-        .max()
-        .unwrap_or(7)
-        .max(7); // "VERSION".len()
-    let tag_w = runtimes
-        .iter()
-        .map(|r| r.tag.len())
-        .max()
-        .unwrap_or(3)
-        .max(3); // "TAG".len()
-
-    // Header
-    println!(
-        "{:<width_v$}  {:<width_t$}  PATH",
-        "VERSION",
-        "TAG",
-        width_v = version_w,
-        width_t = tag_w,
-    );
-    println!(
-        "{:-<width_v$}  {:-<width_t$}  PATH",
-        "",
-        "",
-        width_v = version_w,
-        width_t = tag_w,
-    );
-
-    // Rows
-    for rt in runtimes {
-        let marker = if rt.is_default { " *" } else { "  " };
-        println!(
-            "{}{:<width_v$}  {:<width_t$}  {}",
-            marker,
-            rt.version,
-            rt.tag,
-            rt.executable.display(),
-            width_v = version_w,
-            width_t = tag_w,
-        );
-    }
-
-    Ok(0)
+pub fn run<M: PyManagerOps>(
+    pymanager: &mut M,
+) -> Result<Vec<crate::services::pymanager::Runtime>, FpmError> {
+    pymanager.list_runtimes().map(|rts| rts.to_vec())
 }
 
 #[cfg(test)]
@@ -102,8 +52,8 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let mut mock = MockPyManager::new(canned_runtimes(), temp.path().join("pymanager.json"));
 
-        let code = run(&mut mock).unwrap();
-        assert_eq!(code, 0);
+        let runtimes = run(&mut mock).unwrap();
+        assert_eq!(runtimes.len(), 3);
     }
 
     #[test]
@@ -111,8 +61,8 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let mut mock = MockPyManager::new(vec![], temp.path().join("pymanager.json"));
 
-        let code = run(&mut mock).unwrap();
-        assert_eq!(code, 0);
+        let runtimes = run(&mut mock).unwrap();
+        assert_eq!(runtimes.len(), 0);
     }
 
     #[test]
@@ -123,8 +73,8 @@ mod tests {
         let mut mock = MockPyManager::new(canned_runtimes(), temp.path().join("pymanager.json"));
 
         // list_runtimes on mock always succeeds; verify Ok path.
-        let code = run(&mut mock).unwrap();
-        assert_eq!(code, 0);
+        let runtimes = run(&mut mock).unwrap();
+        assert_eq!(runtimes.len(), 3);
         // Verify the mock still has its data (cached, not consumed).
         assert_eq!(mock.list_runtimes().unwrap().len(), 3);
     }

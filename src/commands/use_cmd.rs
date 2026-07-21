@@ -45,7 +45,7 @@ pub fn run<M: PyManagerOps>(
     silent_if_unchanged: bool,
     cwd: &Path,
     session_dir: &Path,
-) -> Result<i32, FpmError> {
+) -> Result<Option<String>, FpmError> {
     // 1. Resolve the version tag.
     let tag = match version {
         Some(v) => v.to_string(),
@@ -76,7 +76,7 @@ pub fn run<M: PyManagerOps>(
                 // Already active — suppress output, exit 0.
                 // Still set PYTHON_MANAGER_DEFAULT for correctness.
                 std::env::set_var(config::PYTHON_MANAGER_DEFAULT_ENV, &tag);
-                return Ok(0);
+                return Ok(None);
             }
         }
     }
@@ -85,9 +85,8 @@ pub fn run<M: PyManagerOps>(
     activate_session(pymanager, &tag, session_dir)?;
 
     // 7. Print the switch message.
-    println!("Using Python {tag}");
 
-    Ok(0)
+    Ok(Some(tag))
 }
 
 /// Reads `FPM_MULTISHELL_PATH` from the environment and returns the session dir.
@@ -163,8 +162,8 @@ mod tests {
 
         let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
 
-        let code = run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
-        assert_eq!(code, 0);
+        let res = run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
+        assert!(res.is_some());
 
         // Verify the junction points to the install dir.
         let target = shim::current_target(&session_dir).unwrap().unwrap();
@@ -237,8 +236,8 @@ mod tests {
 
         let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
 
-        let code = run(&mut mock, None, false, fpm_dir, &session_dir).unwrap();
-        assert_eq!(code, 0);
+        let res = run(&mut mock, None, false, fpm_dir, &session_dir).unwrap();
+        assert!(res.is_some());
 
         // Verify the junction points to 3.13.
         let target = shim::current_target(&session_dir).unwrap().unwrap();
@@ -271,8 +270,8 @@ mod tests {
         run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
 
         // Now run with --silent-if-unchanged for the same version.
-        let code = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
-        assert_eq!(code, 0, "silent-if-unchanged should exit 0");
+        let res = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
+        assert!(res.is_none());
     }
 
     #[test]
@@ -310,8 +309,8 @@ mod tests {
         run(&mut mock, Some("3.13-64"), false, fpm_dir, &session_dir).unwrap();
 
         // Now run silent-if-unchanged for 3.14 (different) — should switch.
-        let code = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
-        assert_eq!(code, 0);
+        let res = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
+        assert!(res.is_some());
 
         // Verify junction now points to 3.14.
         let target = shim::current_target(&session_dir).unwrap().unwrap();
