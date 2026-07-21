@@ -30,7 +30,7 @@ use std::path::{Path, PathBuf};
 
 use crate::commands::activate_session;
 use crate::error::FpmError;
-use crate::pymanager::PyManagerOps;
+use crate::services::pymanager::PyManagerOps;
 
 /// Runs the `fpm default` command.
 ///
@@ -173,7 +173,7 @@ fn runtime_version_for_tag<M: PyManagerOps>(pymanager: &mut M, tag: &str) -> Opt
 mod tests {
     use super::*;
     use crate::config;
-    use crate::pymanager::{MockPyManager, Runtime};
+    use crate::services::pymanager::{MockPyManager, Runtime};
     use crate::shim;
     use std::fs;
     use std::path::PathBuf;

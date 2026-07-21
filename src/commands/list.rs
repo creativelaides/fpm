@@ -7,7 +7,7 @@
 // raw `py list` output — it formats the parsed data for readability.
 
 use crate::error::FpmError;
-use crate::pymanager::PyManagerOps;
+use crate::services::pymanager::PyManagerOps;
 
 /// Runs the `fpm list` command.
 ///
@@ -71,24 +71,24 @@ pub fn run<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pymanager::MockPyManager;
+    use crate::services::pymanager::MockPyManager;
     use std::path::PathBuf;
 
-    fn canned_runtimes() -> Vec<crate::pymanager::Runtime> {
+    fn canned_runtimes() -> Vec<crate::services::pymanager::Runtime> {
         vec![
-            crate::pymanager::Runtime {
+            crate::services::pymanager::Runtime {
                 tag: "3.14-64".to_string(),
                 version: "3.14.6".to_string(),
                 executable: PathBuf::from("C:\\Python314\\python.exe"),
                 is_default: true,
             },
-            crate::pymanager::Runtime {
+            crate::services::pymanager::Runtime {
                 tag: "3.13-64".to_string(),
                 version: "3.13.7".to_string(),
                 executable: PathBuf::from("C:\\Python313\\python.exe"),
                 is_default: false,
             },
-            crate::pymanager::Runtime {
+            crate::services::pymanager::Runtime {
                 tag: "3.12-64".to_string(),
                 version: "3.12.11".to_string(),
                 executable: PathBuf::from("C:\\Python312\\python.exe"),

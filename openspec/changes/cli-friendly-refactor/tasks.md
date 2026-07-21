@@ -24,11 +24,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Core / Services
 
-- [ ] 2.1 Write failing unit tests in `src/services/remote.rs` for remote version fetching and caching logic.
-- [ ] 2.2 Implement `src/services/remote.rs` to fetch Python versions from python.org using `ureq`.
-- [ ] 2.3 Implement caching in `src/services/remote.rs` using `etcetera` for the cache directory and a 24-hour TTL.
-- [ ] 2.4 Implement offline fallback in `src/services/remote.rs` to return cached versions with a warning if the network request fails.
-- [ ] 2.5 Refactor `src/pymanager.rs` into `src/services/pymanager.rs` to serve as the core service for local Python management.
+- [x] 2.1 Write failing unit tests in `src/services/remote.rs` for remote version fetching and caching logic.
+- [x] 2.2 Implement `src/services/remote.rs` to fetch Python versions from python.org using `ureq`.
+- [x] 2.3 Implement caching in `src/services/remote.rs` using `etcetera` for the cache directory and a 24-hour TTL.
+- [x] 2.4 Implement offline fallback in `src/services/remote.rs` to return cached versions with a warning if the network request fails.
+- [x] 2.5 Refactor `src/pymanager.rs` into `src/services/pymanager.rs` to serve as the core service for local Python management.
 
 ## Phase 3: CLI Controllers / UI wiring
 

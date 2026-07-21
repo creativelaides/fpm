@@ -43,6 +43,16 @@ pub enum FpmError {
     /// Exit code: 6
     #[error("Failed to read/write pymanager.json: {0}")]
     ConfigError(String),
+
+    /// Network request failed
+    /// Exit code: 7
+    #[error("Network error: {0}")]
+    NetworkError(String),
+
+    /// Cache operation failed
+    /// Exit code: 8
+    #[error("Cache error: {0}")]
+    CacheError(String),
 }
 
 impl FpmError {
@@ -56,6 +66,8 @@ impl FpmError {
     /// | SpecNotSatisfied   | 4    |
     /// | ShimError          | 5    |
     /// | ConfigError        | 6    |
+    /// | NetworkError       | 7    |
+    /// | CacheError         | 8    |
     pub fn exit_code(&self) -> i32 {
         match self {
             FpmError::PyNotFound => 1,
@@ -64,6 +76,8 @@ impl FpmError {
             FpmError::SpecNotSatisfied { .. } => 4,
             FpmError::ShimError(_) => 5,
             FpmError::ConfigError(_) => 6,
+            FpmError::NetworkError(_) => 7,
+            FpmError::CacheError(_) => 8,
         }
     }
 }
@@ -113,6 +127,18 @@ mod tests {
     }
 
     #[test]
+    fn network_error_maps_to_7() {
+        let err = FpmError::NetworkError("timeout".to_string());
+        assert_eq!(err.exit_code(), 7);
+    }
+
+    #[test]
+    fn cache_error_maps_to_8() {
+        let err = FpmError::CacheError("not found".to_string());
+        assert_eq!(err.exit_code(), 8);
+    }
+
+    #[test]
     fn all_exit_codes_are_distinct_and_in_range() {
         let codes = [
             FpmError::PyNotFound.exit_code(),
@@ -124,13 +150,15 @@ mod tests {
             .exit_code(),
             FpmError::ShimError(io::Error::other("x")).exit_code(),
             FpmError::ConfigError(String::new()).exit_code(),
+            FpmError::NetworkError(String::new()).exit_code(),
+            FpmError::CacheError(String::new()).exit_code(),
         ];
         // Each code is unique
         let unique: std::collections::HashSet<i32> = codes.iter().copied().collect();
-        assert_eq!(unique.len(), 6, "exit codes must be distinct");
-        // All in 1..=6
+        assert_eq!(unique.len(), 8, "exit codes must be distinct");
+        // All in 1..=8
         for c in &codes {
-            assert!(*c >= 1 && *c <= 6, "exit code {} out of range 1-6", c);
+            assert!(*c >= 1 && *c <= 8, "exit code {} out of range 1-8", c);
         }
     }
 

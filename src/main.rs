@@ -9,7 +9,6 @@ mod cli;
 mod commands;
 mod config;
 mod error;
-mod pymanager;
 pub mod services;
 mod shell;
 mod shim;
