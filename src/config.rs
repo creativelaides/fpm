@@ -84,15 +84,19 @@ pub fn multishells_dir(fpm_dir: &Path) -> PathBuf {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use std::env;
+
+    pub static ENV_MUTEX: once_cell::sync::Lazy<std::sync::Mutex<()>> =
+        once_cell::sync::Lazy::new(|| std::sync::Mutex::new(()));
 
     /// Helper: run a closure with an env var set, then restore it.
     fn with_env<F>(key: &str, value: Option<&str>, f: F)
     where
         F: FnOnce(),
     {
+        let _lock = ENV_MUTEX.lock().unwrap();
         let original = env::var_os(key);
         match value {
             Some(v) => env::set_var(key, v),
