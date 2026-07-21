@@ -76,28 +76,51 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
             })?;
             let cwd = std::env::current_dir()
                 .map_err(|e| FpmError::ShimError(std::io::Error::other(e)))?;
-            commands::use_cmd::run(
+
+            let res = commands::use_cmd::run(
                 &mut ctx.pymanager,
                 version.as_deref(),
                 silent_if_unchanged,
                 &cwd,
                 &session_dir,
-            )
+            )?;
+
+            if let Some(tag) = res {
+                println!("{}", ui::formatters::format_use_success(&tag));
+            }
+            Ok(0)
         }
 
         Some(Commands::List) => {
             let mut ctx = commands::CommandContext::from_env()?;
-            commands::list::run(&mut ctx.pymanager)
+            let runtimes = commands::list::run(&mut ctx.pymanager)?;
+            print!("{}", ui::formatters::format_local_runtimes(&runtimes));
+            Ok(0)
         }
 
         Some(Commands::ListRemote) => {
-            println!("ListRemote not yet implemented");
+            let fetcher = crate::services::remote::DefaultRemoteFetcher::new()?;
+            let (versions, offline) = commands::list_remote::run(&fetcher)?;
+            // Assuming we pass `false` for show_pre for now (would need CLI flag)
+            print!(
+                "{}",
+                ui::formatters::print_remote_versions(&versions, false, offline)
+            );
             Ok(0)
         }
 
         Some(Commands::Current) => {
             let mut ctx = commands::CommandContext::from_env()?;
-            commands::current::run(&mut ctx.pymanager)
+            let (active_tag, py_version_line) = commands::current::run(&mut ctx.pymanager)?;
+            println!(
+                "{}",
+                ui::formatters::format_current_version(
+                    active_tag.as_deref(),
+                    py_version_line.as_deref()
+                )
+            );
+            let exit_code = if py_version_line.is_none() { 1 } else { 0 };
+            Ok(exit_code)
         }
 
         Some(Commands::Default {
@@ -106,24 +129,44 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
             dry_run,
         }) => {
             let mut ctx = commands::CommandContext::from_env()?;
-            // Pass session_dir through as Option; default::run only requires it
-            // on the set path (validate → require session_dir → write →
-            // activate). Read, unset, and dry-run do not need it, so we must
-            // NOT error here when FPM_MULTISHELL_PATH is unset (spec: read/unset
-            // must work outside an fpm-integrated shell).
-            commands::default::run(
+            let res = commands::default::run(
                 &mut ctx.pymanager,
                 tag.as_deref(),
                 unset,
                 dry_run,
                 ctx.session_dir.as_deref(),
-            )
+            )?;
+
+            match res {
+                commands::default::DefaultCommandResult::Read(tag) => {
+                    println!("{}", ui::formatters::format_default_read(tag.as_deref()));
+                }
+                commands::default::DefaultCommandResult::Unset(removed) => {
+                    println!("{}", ui::formatters::format_default_unset(removed));
+                }
+                commands::default::DefaultCommandResult::DryRun {
+                    tag,
+                    version,
+                    install_dir,
+                } => {
+                    println!(
+                        "{}",
+                        ui::formatters::format_default_dry_run(&tag, &version, &install_dir)
+                    );
+                }
+                commands::default::DefaultCommandResult::Set(tag) => {
+                    println!("{}", ui::formatters::format_default_set_success(&tag));
+                }
+            }
+            Ok(0)
         }
 
         Some(Commands::Env { shell, use_on_cd }) => match shell {
             ShellKind::Powershell => {
                 let ctx = commands::CommandContext::from_env()?;
-                commands::env_cmd::run(&ctx.fpm_dir, use_on_cd)
+                let script = commands::env_cmd::run(&ctx.fpm_dir, use_on_cd)?;
+                print!("{}", script);
+                Ok(0)
             }
         },
 

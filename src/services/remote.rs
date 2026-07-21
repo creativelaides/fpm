@@ -12,7 +12,7 @@ pub struct RemoteVersion {
 }
 
 pub trait RemoteFetcher {
-    fn fetch_versions(&self) -> Result<Vec<RemoteVersion>, FpmError>;
+    fn fetch_versions(&self) -> Result<(Vec<RemoteVersion>, bool), FpmError>;
     fn get_cached_versions(&self) -> Result<Vec<RemoteVersion>, FpmError>;
 }
 
@@ -103,11 +103,11 @@ impl DefaultRemoteFetcher {
 }
 
 impl RemoteFetcher for DefaultRemoteFetcher {
-    fn fetch_versions(&self) -> Result<Vec<RemoteVersion>, FpmError> {
+    fn fetch_versions(&self) -> Result<(Vec<RemoteVersion>, bool), FpmError> {
         if let Some((cached_versions, modified)) = self.read_cache() {
             if let Ok(elapsed) = modified.elapsed() {
                 if elapsed < self.cache_ttl {
-                    return Ok(cached_versions);
+                    return Ok((cached_versions, false));
                 }
             }
         }
@@ -115,11 +115,11 @@ impl RemoteFetcher for DefaultRemoteFetcher {
         match self.fetch_from_network() {
             Ok(versions) => {
                 let _ = self.write_cache(&versions);
-                Ok(versions)
+                Ok((versions, false))
             }
             Err(e) => {
                 if let Some((cached_versions, _)) = self.read_cache() {
-                    return Ok(cached_versions);
+                    return Ok((cached_versions, true));
                 }
                 Err(e)
             }

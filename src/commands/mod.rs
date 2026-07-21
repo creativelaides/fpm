@@ -21,6 +21,7 @@ pub mod default;
 pub mod env_cmd;
 pub mod install;
 pub mod list;
+pub mod list_remote;
 pub mod passthrough;
 pub mod use_cmd;
 

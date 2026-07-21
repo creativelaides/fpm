@@ -32,12 +32,12 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: CLI Controllers / UI wiring
 
-- [ ] 3.1 Write failing tests in `src/ui/formatters.rs` for `print_remote_versions` and existing command outputs.
-- [ ] 3.2 Create `src/commands/list_remote.rs` to wire the `list-remote` command, calling `services/remote.rs` and rendering via `ui/formatters.rs`.
-- [ ] 3.3 Refactor `src/commands/list.rs` to return `Result<DomainType, Error>` instead of using `println!`, and render output via `src/ui/formatters.rs`.
-- [ ] 3.4 Refactor `src/commands/current.rs` and `src/commands/default.rs` to use Clean Architecture Lite.
-- [ ] 3.5 Refactor `src/commands/use_cmd.rs` and `src/commands/env_cmd.rs` to use Clean Architecture Lite.
-- [ ] 3.6 Refactor `src/commands/install.rs` and `src/commands/passthrough.rs` to use Clean Architecture Lite.
+- [x] 3.1 Write failing tests in `src/ui/formatters.rs` for `print_remote_versions` and existing command outputs.
+- [x] 3.2 Create `src/commands/list_remote.rs` to wire the `list-remote` command, calling `services/remote.rs` and rendering via `ui/formatters.rs`.
+- [x] 3.3 Refactor `src/commands/list.rs` to return `Result<DomainType, Error>` instead of using `println!`, and render output via `src/ui/formatters.rs`.
+- [x] 3.4 Refactor `src/commands/current.rs` and `src/commands/default.rs` to use Clean Architecture Lite.
+- [x] 3.5 Refactor `src/commands/use_cmd.rs` and `src/commands/env_cmd.rs` to use Clean Architecture Lite.
+- [x] 3.6 Refactor `src/commands/install.rs` and `src/commands/passthrough.rs` to use Clean Architecture Lite.
 
 ## Phase 4: Testing / Verification
 

@@ -17,7 +17,7 @@ use crate::shim;
 ///
 /// Creates a session directory and renders the PowerShell integration script
 /// to stdout. `use_on_cd` controls whether the Set-Location hook is emitted.
-pub fn run(fpm_dir: &Path, use_on_cd: bool) -> Result<i32, FpmError> {
+pub fn run(fpm_dir: &Path, use_on_cd: bool) -> Result<String, FpmError> {
     // Create the per-session multishell directory.
     let session_dir = shim::create_session_dir(fpm_dir)?;
 
@@ -25,10 +25,7 @@ pub fn run(fpm_dir: &Path, use_on_cd: bool) -> Result<i32, FpmError> {
     let ps = PowerShell::new();
     let script = ps.render(&session_dir, use_on_cd);
 
-    // Print to stdout — the user pipes/evaluates this.
-    print!("{script}");
-
-    Ok(0)
+    Ok(script)
 }
 
 #[cfg(test)]
@@ -40,8 +37,8 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
 
-        let code = run(fpm_dir, false).unwrap();
-        assert_eq!(code, 0);
+        let script = run(fpm_dir, false).unwrap();
+        assert!(!script.is_empty());
 
         // Verify a session dir was created under multishells/.
         let multishells = fpm_dir.join("multishells");
@@ -63,8 +60,8 @@ mod tests {
         // Capture stdout would require a capture harness; instead verify
         // the session dir was created (script content is tested in
         // shell::powershell::tests).
-        let code = run(fpm_dir, false).unwrap();
-        assert_eq!(code, 0);
+        let script = run(fpm_dir, false).unwrap();
+        assert!(!script.is_empty());
     }
 
     #[test]
@@ -72,8 +69,8 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let fpm_dir = temp.path();
 
-        let code = run(fpm_dir, true).unwrap();
-        assert_eq!(code, 0);
+        let script = run(fpm_dir, true).unwrap();
+        assert!(!script.is_empty());
 
         let multishells = fpm_dir.join("multishells");
         assert!(multishells.exists());

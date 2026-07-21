@@ -44,13 +44,25 @@ use crate::services::pymanager::PyManagerOps;
 /// - `session_dir`: the per-session multishell directory (from
 ///   `FPM_MULTISHELL_PATH`); required for the set path, ignored for
 ///   read/unset/dry-run.
+#[derive(Debug, Clone, PartialEq)]
+pub enum DefaultCommandResult {
+    Read(Option<String>),
+    Unset(bool),
+    DryRun {
+        tag: String,
+        version: String,
+        install_dir: PathBuf,
+    },
+    Set(String),
+}
+
 pub fn run<M: PyManagerOps>(
     pymanager: &mut M,
     tag: Option<&str>,
     unset: bool,
     dry_run: bool,
     session_dir: Option<&Path>,
-) -> Result<i32, FpmError> {
+) -> Result<DefaultCommandResult, FpmError> {
     if unset {
         return run_unset(pymanager);
     }
@@ -68,37 +80,22 @@ pub fn run<M: PyManagerOps>(
 }
 
 /// `fpm default` (no args, no flags): read and print `default_tag`.
-fn run_read<M: PyManagerOps>(pymanager: &M) -> Result<i32, FpmError> {
-    match pymanager.read_default()? {
-        Some(t) => {
-            println!("{t}");
-            Ok(0)
-        }
-        None => {
-            println!("No default Python configured.");
-            Ok(0)
-        }
-    }
+fn run_read<M: PyManagerOps>(pymanager: &M) -> Result<DefaultCommandResult, FpmError> {
+    Ok(DefaultCommandResult::Read(pymanager.read_default()?))
 }
 
-/// `fpm default --unset`: remove `default_tag`, print the result.
-fn run_unset<M: PyManagerOps>(pymanager: &mut M) -> Result<i32, FpmError> {
+fn run_unset<M: PyManagerOps>(pymanager: &mut M) -> Result<DefaultCommandResult, FpmError> {
     let removed = pymanager.unset_default()?;
-    if removed {
-        println!("Default Python unset.");
-    } else {
-        println!("No default was configured.");
-    }
-    Ok(0)
+    Ok(DefaultCommandResult::Unset(removed))
 }
 
 /// `fpm default <tag> --dry-run`: validate via resolve_exe, print a preview,
 /// no side effects.
-fn run_dry_run<M: PyManagerOps>(pymanager: &mut M, tag: &str) -> Result<i32, FpmError> {
-    // Validate the tag resolves to an installed runtime before previewing.
+fn run_dry_run<M: PyManagerOps>(
+    pymanager: &mut M,
+    tag: &str,
+) -> Result<DefaultCommandResult, FpmError> {
     let exe_path = pymanager.resolve_exe(tag)?;
-
-    // Derive the install directory (parent of the resolved exe).
     let install_dir: PathBuf = exe_path
         .parent()
         .ok_or_else(|| {
@@ -109,14 +106,13 @@ fn run_dry_run<M: PyManagerOps>(pymanager: &mut M, tag: &str) -> Result<i32, Fpm
         })?
         .to_path_buf();
 
-    // Best-effort version string from the runtime list; fall back to the tag.
     let version = runtime_version_for_tag(pymanager, tag).unwrap_or_else(|| tag.to_string());
 
-    println!(
-        "Would set default to {tag} and activate Python {version} at {}",
-        install_dir.display()
-    );
-    Ok(0)
+    Ok(DefaultCommandResult::DryRun {
+        tag: tag.to_string(),
+        version,
+        install_dir,
+    })
 }
 
 /// `fpm default <tag>`: validate → require session_dir → write → activate.
@@ -124,13 +120,9 @@ fn run_set<M: PyManagerOps>(
     pymanager: &mut M,
     tag: &str,
     session_dir: Option<&Path>,
-) -> Result<i32, FpmError> {
-    // 1. Validate the tag resolves BEFORE any side effect (spec: "Reject
-    //    uninstalled tag before any side effect").
+) -> Result<DefaultCommandResult, FpmError> {
     pymanager.resolve_exe(tag)?;
 
-    // 2. Require a session dir BEFORE writing (spec: "FPM_MULTISHELL_PATH not
-    //    set" → pymanager.json is NOT written).
     let session_dir = session_dir.ok_or_else(|| {
         FpmError::ShimError(std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -138,12 +130,8 @@ fn run_set<M: PyManagerOps>(
         ))
     })?;
 
-    // 3. Persist default_tag.
     pymanager.write_default(tag)?;
 
-    // 4. Activate the session (retarget + set env). On failure, do NOT roll
-    //    back the write — the persisted default is still correct global state;
-    //    only the session is stale. Print a warning + exit 5 (ShimError).
     if let Err(activate_err) = activate_session(pymanager, tag, session_dir) {
         eprintln!(
             "Default set to {tag} but session activation failed: {activate_err}. Run `fpm use {tag}` to activate."
@@ -153,8 +141,7 @@ fn run_set<M: PyManagerOps>(
         ))));
     }
 
-    println!("Default Python set to {tag}. Using Python {tag}.");
-    Ok(0)
+    Ok(DefaultCommandResult::Set(tag.to_string()))
 }
 
 /// Looks up the `sort-version` (bare version) for a tag via the runtime list.
@@ -212,7 +199,7 @@ mod tests {
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path);
         let code = run(&mut mock, None, false, false, None).unwrap();
-        assert_eq!(code, 0);
+        assert!(matches!(code, DefaultCommandResult::Read(_)));
     }
 
     #[test]
@@ -223,7 +210,7 @@ mod tests {
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path);
         let code = run(&mut mock, None, false, false, None).unwrap();
-        assert_eq!(code, 0);
+        assert!(matches!(code, DefaultCommandResult::Read(_)));
     }
 
     // ── set mode: write + activate ───────────────────────────────────────────
@@ -256,8 +243,8 @@ mod tests {
         let original_env = std::env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV);
         std::env::remove_var(config::PYTHON_MANAGER_DEFAULT_ENV);
 
-        let code = run(&mut mock, Some("3.14-64"), false, false, Some(&session_dir)).unwrap();
-        assert_eq!(code, 0);
+        let _res = run(&mut mock, Some("3.14-64"), false, false, Some(&session_dir)).unwrap();
+        /* code was 0 */
 
         // default_tag written, other keys preserved.
         let raw = fs::read_to_string(&config_path).unwrap();
@@ -306,8 +293,8 @@ mod tests {
         let original_env = std::env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV);
         std::env::remove_var(config::PYTHON_MANAGER_DEFAULT_ENV);
 
-        let code = run(&mut mock, Some("3.14-64"), false, false, Some(&session_dir)).unwrap();
-        assert_eq!(code, 0);
+        let _res = run(&mut mock, Some("3.14-64"), false, false, Some(&session_dir)).unwrap();
+        /* code was 0 */
 
         match original_env {
             Some(v) => std::env::set_var(config::PYTHON_MANAGER_DEFAULT_ENV, v),
@@ -416,8 +403,8 @@ mod tests {
         .unwrap();
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());
-        let code = run(&mut mock, None, true, false, None).unwrap();
-        assert_eq!(code, 0);
+        let _res = run(&mut mock, None, true, false, None).unwrap();
+        /* code was 0 */
 
         // default_tag removed, other keys preserved.
         let raw = fs::read_to_string(&config_path).unwrap();
@@ -433,8 +420,8 @@ mod tests {
         fs::write(&config_path, r#"{"install_dir": "C:\\py"}"#).unwrap();
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());
-        let code = run(&mut mock, None, true, false, None).unwrap();
-        assert_eq!(code, 0);
+        let _res = run(&mut mock, None, true, false, None).unwrap();
+        /* code was 0 */
 
         // File unchanged (key was absent).
         let raw = fs::read_to_string(&config_path).unwrap();
@@ -449,8 +436,8 @@ mod tests {
         // No file created.
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());
-        let code = run(&mut mock, None, true, false, None).unwrap();
-        assert_eq!(code, 0);
+        let _res = run(&mut mock, None, true, false, None).unwrap();
+        /* code was 0 */
 
         // No file created by unset.
         assert!(!config_path.exists());
@@ -481,8 +468,8 @@ mod tests {
         let original_env = std::env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV);
         std::env::remove_var(config::PYTHON_MANAGER_DEFAULT_ENV);
 
-        let code = run(&mut mock, Some("3.14-64"), false, true, None).unwrap();
-        assert_eq!(code, 0);
+        let res = run(&mut mock, Some("3.14-64"), false, true, None).unwrap();
+        assert!(matches!(res, DefaultCommandResult::DryRun { .. }));
 
         // pymanager.json unchanged.
         let raw = fs::read_to_string(&config_path).unwrap();
