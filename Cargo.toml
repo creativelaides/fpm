@@ -1,11 +1,11 @@
 [package]
 name = "fpy"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
 description = "A Windows-native Rust wrapper around PyManager for per-session and global Python version switching"
 authors = ["Velaides"]
-repository = "https://github.com/creativelaides/fpm"
+repository = "https://github.com/creativelaides/fpy"
 keywords = ["python", "version-manager", "windows", "pymanager", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
