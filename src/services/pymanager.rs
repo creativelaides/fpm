@@ -98,7 +98,7 @@ impl PyManager {
     /// Spawns `py list --format=json` and parses the output into runtimes.
     fn fetch_runtimes(&self) -> Result<Vec<Runtime>, FpmError> {
         let output = Command::new("py")
-            .args(["list", "--format=json"])
+            .args(["list", "-f", "json"])
             .output()
             .map_err(|_| FpmError::PyNotFound)?;
 
@@ -127,7 +127,7 @@ impl PyManagerOps for PyManager {
 
     fn resolve_exe(&mut self, tag: &str) -> Result<PathBuf, FpmError> {
         let output = Command::new("py")
-            .args(["list", "--one", "--format=exe", tag])
+            .args(["list", "--one", "-f", "exe", tag])
             .output()
             .map_err(|_| FpmError::PyNotFound)?;
 
