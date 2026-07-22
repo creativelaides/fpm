@@ -8,9 +8,9 @@
 // `| Out-String | Invoke-Expression`.
 //
 // The script:
-//   1. Sets `$env:FPM_DIR` to the fpm data directory.
+//   1. Sets `$env:FPY_DIR` to the fpm data directory.
 //   2. Prepends the session shim directory to `$env:PATH`.
-//   3. Sets `$env:FPM_MULTISHELL_PATH` to the session directory.
+//   3. Sets `$env:FPY_MULTISHELL_PATH` to the session directory.
 //   4. (with --use-on-cd) Overrides `Set-Location` to call
 //      `fpm use --silent-if-unchanged` when a `.python-version` or
 //      `pyproject.toml` exists in the new location.
@@ -20,7 +20,7 @@
 use std::path::Path;
 
 use super::Shell;
-use crate::config::{FPM_DIR_ENV, FPM_MULTISHELL_PATH_ENV};
+use crate::config::{FPY_DIR_ENV, FPY_MULTISHELL_PATH_ENV};
 
 /// PowerShell shell backend.
 pub struct PowerShell;
@@ -40,23 +40,23 @@ impl Default for PowerShell {
 impl Shell for PowerShell {
     fn render(&self, session_dir: &Path, use_on_cd: bool) -> String {
         // session_dir is the per-session multishell directory. We need the
-        // fpm_dir (parent of multishells/) for $env:FPM_DIR. Walk up two
-        // levels: <fpm_dir>/multishells/<session-id> -> <fpm_dir>.
-        let fpm_dir = session_dir
+        // fpy_dir (parent of multishells/) for $env:FPY_DIR. Walk up two
+        // levels: <fpy_dir>/multishells/<session-id> -> <fpy_dir>.
+        let fpy_dir = session_dir
             .parent() // multishells/
-            .and_then(|p| p.parent()) // fpm_dir
+            .and_then(|p| p.parent()) // fpy_dir
             .map(|p| p.to_path_buf())
             .unwrap_or_default();
 
         let session_str = session_dir.display();
-        let fpm_dir_str = fpm_dir.display();
+        let fpm_dir_str = fpy_dir.display();
 
         let mut script = String::new();
 
         // ── Environment variables ─────────────────────────────────────
-        script.push_str(&format!("$env:{FPM_DIR_ENV} = \"{fpm_dir_str}\"\n"));
+        script.push_str(&format!("$env:{FPY_DIR_ENV} = \"{fpm_dir_str}\"\n"));
         script.push_str(&format!(
-            "$env:{FPM_MULTISHELL_PATH_ENV} = \"{session_str}\"\n"
+            "$env:{FPY_MULTISHELL_PATH_ENV} = \"{session_str}\"\n"
         ));
         // Prepend session shim dir to PATH so python.exe, pip.exe, etc.
         // resolve from the junction'd install directory.
@@ -147,13 +147,13 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    fn session_dir(fpm_dir: &Path) -> PathBuf {
-        fpm_dir.join("multishells").join("1234_5678")
+    fn session_dir(fpy_dir: &Path) -> PathBuf {
+        fpy_dir.join("multishells").join("1234_5678")
     }
 
-    fn render(fpm_dir: &Path, use_on_cd: bool) -> String {
+    fn render(fpy_dir: &Path, use_on_cd: bool) -> String {
         let ps = PowerShell::new();
-        ps.render(&session_dir(fpm_dir), use_on_cd)
+        ps.render(&session_dir(fpy_dir), use_on_cd)
     }
 
     #[test]
@@ -161,12 +161,12 @@ mod tests {
         let fpm = PathBuf::from(r"C:\Users\test\fpm");
         let out = render(&fpm, false);
         assert!(
-            out.contains("$env:FPM_DIR ="),
+            out.contains("$env:FPY_DIR ="),
             "output should set FPM_DIR, got:\n{out}"
         );
         assert!(
             out.contains(r"C:\Users\test\fpm"),
-            "output should contain the fpm_dir path, got:\n{out}"
+            "output should contain the fpy_dir path, got:\n{out}"
         );
     }
 
@@ -191,7 +191,7 @@ mod tests {
         let fpm = PathBuf::from(r"C:\Users\test\fpm");
         let out = render(&fpm, false);
         assert!(
-            out.contains("$env:FPM_MULTISHELL_PATH ="),
+            out.contains("$env:FPY_MULTISHELL_PATH ="),
             "output should set FPM_MULTISHELL_PATH, got:\n{out}"
         );
         let session = session_dir(&fpm);
@@ -285,7 +285,7 @@ mod tests {
         let out = render(&fpm, false);
         let trimmed = out.trim_start();
         assert!(
-            trimmed.starts_with("$env:FPM_DIR ="),
+            trimmed.starts_with("$env:FPY_DIR ="),
             "first meaningful line should be FPM_DIR assignment, got:\n{}",
             &trimmed[..50.min(trimmed.len())]
         );
@@ -293,12 +293,12 @@ mod tests {
 
     #[test]
     fn fpm_dir_resolved_from_session_dir_parent() {
-        // session_dir = <fpm_dir>/multishells/<id>
-        // render should derive fpm_dir by walking up two levels.
+        // session_dir = <fpy_dir>/multishells/<id>
+        // render should derive fpy_dir by walking up two levels.
         let fpm = PathBuf::from(r"C:\data\fpm");
         let out = render(&fpm, false);
         assert!(
-            out.contains(r#"$env:FPM_DIR = "C:\data\fpm""#),
+            out.contains(r#"$env:FPY_DIR = "C:\data\fpm""#),
             "FPM_DIR should be derived from session_dir parent, got:\n{out}"
         );
     }

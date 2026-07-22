@@ -22,7 +22,7 @@ fn use_explicit_version_switches_and_prints_message() {
     // We need FPM_MULTISHELL_PATH to be set for `fpm use`.
     let env_output = Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .output()
         .unwrap();
@@ -32,9 +32,9 @@ fn use_explicit_version_switches_and_prints_message() {
     // Extract the FPM_MULTISHELL_PATH value from the emitted script.
     let session_line = script
         .lines()
-        .find(|l| l.contains("$env:FPM_MULTISHELL_PATH"))
+        .find(|l| l.contains("$env:FPY_MULTISHELL_PATH"))
         .unwrap();
-    // Line looks like: $env:FPM_MULTISHELL_PATH = "C:\...\multishells\1234_5678"
+    // Line looks like: $env:FPY_MULTISHELL_PATH = "C:\...\multishells\1234_5678"
     let session_dir = session_line
         .split('=')
         .nth(1)
@@ -46,8 +46,8 @@ fn use_explicit_version_switches_and_prints_message() {
     // Now run `fpm use 3.14` with FPM_MULTISHELL_PATH set.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .args(["use", "3.14"])
         .assert()
         .success()
@@ -65,7 +65,7 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
     // Setup: run fpm env to get a session dir.
     let env_output = Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .output()
         .unwrap();
@@ -73,7 +73,7 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
     let script = String::from_utf8(env_output.stdout).unwrap();
     let session_line = script
         .lines()
-        .find(|l| l.contains("$env:FPM_MULTISHELL_PATH"))
+        .find(|l| l.contains("$env:FPY_MULTISHELL_PATH"))
         .unwrap();
     let session_dir = session_line
         .split('=')
@@ -86,8 +86,8 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
     // First, switch to 3.14 normally.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .args(["use", "3.14"])
         .assert()
         .success();
@@ -95,8 +95,8 @@ fn use_silent_if_unchanged_suppresses_output_when_active() {
     // Now run with --silent-if-unchanged — should exit 0 with no stdout.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .args(["use", "--silent-if-unchanged", "3.14"])
         .assert()
         .success();
@@ -114,7 +114,7 @@ fn use_nonexistent_version_exits_code_2() {
     // Setup session dir.
     let env_output = Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .output()
         .unwrap();
@@ -122,7 +122,7 @@ fn use_nonexistent_version_exits_code_2() {
     let script = String::from_utf8(env_output.stdout).unwrap();
     let session_line = script
         .lines()
-        .find(|l| l.contains("$env:FPM_MULTISHELL_PATH"))
+        .find(|l| l.contains("$env:FPY_MULTISHELL_PATH"))
         .unwrap();
     let session_dir = session_line
         .split('=')
@@ -135,8 +135,8 @@ fn use_nonexistent_version_exits_code_2() {
     // Use a version that definitely is not installed.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .args(["use", "9.99.99-nonexistent"])
         .assert()
         .failure()
@@ -158,7 +158,7 @@ fn use_no_args_reads_python_version_file() {
     // Setup session dir.
     let env_output = Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .output()
         .unwrap();
@@ -166,7 +166,7 @@ fn use_no_args_reads_python_version_file() {
     let script = String::from_utf8(env_output.stdout).unwrap();
     let session_line = script
         .lines()
-        .find(|l| l.contains("$env:FPM_MULTISHELL_PATH"))
+        .find(|l| l.contains("$env:FPY_MULTISHELL_PATH"))
         .unwrap();
     let session_dir = session_line
         .split('=')
@@ -180,8 +180,8 @@ fn use_no_args_reads_python_version_file() {
     Command::cargo_bin("fpy")
         .unwrap()
         .current_dir(temp.path())
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .arg("use")
         .assert()
         .success()
@@ -201,7 +201,7 @@ fn use_no_args_no_version_file_exits_code_3() {
     // Setup session dir.
     let env_output = Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .output()
         .unwrap();
@@ -209,7 +209,7 @@ fn use_no_args_no_version_file_exits_code_3() {
     let script = String::from_utf8(env_output.stdout).unwrap();
     let session_line = script
         .lines()
-        .find(|l| l.contains("$env:FPM_MULTISHELL_PATH"))
+        .find(|l| l.contains("$env:FPY_MULTISHELL_PATH"))
         .unwrap();
     let session_dir = session_line
         .split('=')
@@ -223,8 +223,8 @@ fn use_no_args_no_version_file_exits_code_3() {
     Command::cargo_bin("fpy")
         .unwrap()
         .current_dir(temp.path())
-        .env("FPM_DIR", temp_path)
-        .env("FPM_MULTISHELL_PATH", &session_dir)
+        .env("FPY_DIR", temp_path)
+        .env("FPY_MULTISHELL_PATH", &session_dir)
         .arg("use")
         .assert()
         .failure()

@@ -33,7 +33,7 @@ pub mod use_cmd;
 /// `fpm env`; commands that need it (e.g. `use`) error if it's missing.
 pub struct CommandContext {
     /// fpm data directory (FPM_DIR or %LocalAppData%\fpm).
-    pub fpm_dir: PathBuf,
+    pub fpy_dir: PathBuf,
     /// Path to pymanager.json (%AppData%\Python\pymanager.json).
     /// Stored for commands that may need direct config access.
     #[allow(dead_code)]
@@ -48,17 +48,17 @@ pub struct CommandContext {
 impl CommandContext {
     /// Builds a `CommandContext` from the live environment.
     ///
-    /// Resolves `fpm_dir` and `pymanager_json_path` via `config`, and reads
+    /// Resolves `fpy_dir` and `pymanager_json_path` via `config`, and reads
     /// `FPM_MULTISHELL_PATH` to find the per-session shim directory.
     pub fn from_env() -> Result<Self, FpmError> {
-        let fpm_dir = config::fpm_dir().map_err(|e| FpmError::ConfigError(e.to_string()))?;
+        let fpy_dir = config::fpy_dir().map_err(|e| FpmError::ConfigError(e.to_string()))?;
         let pymanager_json_path =
             config::pymanager_json_path().map_err(|e| FpmError::ConfigError(e.to_string()))?;
 
-        let session_dir = std::env::var_os(config::FPM_MULTISHELL_PATH_ENV).map(PathBuf::from);
+        let session_dir = std::env::var_os(config::FPY_MULTISHELL_PATH_ENV).map(PathBuf::from);
 
         Ok(CommandContext {
-            fpm_dir,
+            fpy_dir,
             pymanager_json_path,
             pymanager: PyManager::new(),
             session_dir,
@@ -155,11 +155,11 @@ mod tests {
         let temp_path = temp.path().to_path_buf();
 
         with_env(
-            config::FPM_DIR_ENV,
+            config::FPY_DIR_ENV,
             Some(temp_path.to_str().unwrap()),
             || {
                 let ctx = CommandContext::from_env().unwrap();
-                assert_eq!(ctx.fpm_dir, temp_path);
+                assert_eq!(ctx.fpy_dir, temp_path);
             },
         );
     }
@@ -171,7 +171,7 @@ mod tests {
         fs::create_dir_all(&session).unwrap();
 
         with_env(
-            config::FPM_MULTISHELL_PATH_ENV,
+            config::FPY_MULTISHELL_PATH_ENV,
             Some(session.to_str().unwrap()),
             || {
                 let ctx = CommandContext::from_env().unwrap();
@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn from_env_session_dir_none_when_unset() {
-        with_env(config::FPM_MULTISHELL_PATH_ENV, None, || {
+        with_env(config::FPY_MULTISHELL_PATH_ENV, None, || {
             let ctx = CommandContext::from_env().unwrap();
             assert!(ctx.session_dir.is_none());
         });
@@ -208,8 +208,8 @@ mod tests {
     }
 
     /// Builds a session dir and removes it so retarget can place a junction.
-    fn make_session_dir(fpm_dir: &Path) -> PathBuf {
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+    fn make_session_dir(fpy_dir: &Path) -> PathBuf {
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
         session_dir
     }
@@ -218,10 +218,10 @@ mod tests {
     fn activate_session_retargets_and_sets_env_and_returns_canonical_path() {
         let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = make_session_dir(fpm_dir);
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let session_dir = make_session_dir(fpy_dir);
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![crate::services::pymanager::Runtime {
@@ -233,7 +233,7 @@ mod tests {
 
         let mut mock = crate::services::pymanager::MockPyManager::new(
             runtimes,
-            fpm_dir.join("pymanager.json"),
+            fpy_dir.join("pymanager.json"),
         );
 
         let original_env = env::var_os(config::PYTHON_MANAGER_DEFAULT_ENV);
@@ -266,9 +266,9 @@ mod tests {
     #[test]
     fn activate_session_errors_on_uninstalled_tag() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = make_session_dir(fpm_dir);
+        let session_dir = make_session_dir(fpy_dir);
 
         let runtimes = vec![crate::services::pymanager::Runtime {
             tag: "3.14-64".to_string(),
@@ -279,7 +279,7 @@ mod tests {
 
         let mut mock = crate::services::pymanager::MockPyManager::new(
             runtimes,
-            fpm_dir.join("pymanager.json"),
+            fpy_dir.join("pymanager.json"),
         );
 
         let err = activate_session(&mut mock, "9.9", &session_dir).unwrap_err();
@@ -290,14 +290,14 @@ mod tests {
     #[test]
     fn activate_session_errors_on_invalid_session_dir() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
         // session_dir whose parent is a FILE → retarget fails.
-        let blocker = fpm_dir.join("blocker.txt");
+        let blocker = fpy_dir.join("blocker.txt");
         fs::write(&blocker, "not a dir").unwrap();
         let invalid_session = blocker.join("session");
 
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![crate::services::pymanager::Runtime {
@@ -309,7 +309,7 @@ mod tests {
 
         let mut mock = crate::services::pymanager::MockPyManager::new(
             runtimes,
-            fpm_dir.join("pymanager.json"),
+            fpy_dir.join("pymanager.json"),
         );
 
         let err = activate_session(&mut mock, "3.14-64", &invalid_session).unwrap_err();

@@ -22,7 +22,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::config::multishells_dir;
 use crate::error::FpmError;
 
-/// Creates a unique per-session directory under `<fpm_dir>/multishells/`.
+/// Creates a unique per-session directory under `<fpy_dir>/multishells/`.
 ///
 /// The session id is `{pid}_{random_u32}` — PID alone could collide across
 /// process reuse, so a random suffix (seeded from the system clock) makes
@@ -30,8 +30,8 @@ use crate::error::FpmError;
 ///
 /// Creates both the `multishells/` parent and the per-session leaf directory.
 /// Returns the full path to the session directory.
-pub fn create_session_dir(fpm_dir: &Path) -> Result<PathBuf, FpmError> {
-    let parent = multishells_dir(fpm_dir);
+pub fn create_session_dir(fpy_dir: &Path) -> Result<PathBuf, FpmError> {
+    let parent = multishells_dir(fpy_dir);
     fs::create_dir_all(&parent).map_err(io_error)?;
 
     let session_id = format!("{}_{}", id(), random_u32());

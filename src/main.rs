@@ -71,7 +71,7 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
             let session_dir = ctx.session_dir.ok_or_else(|| {
                 FpmError::ShimError(std::io::Error::new(
                     std::io::ErrorKind::NotFound,
-                    "FPM_MULTISHELL_PATH is not set — run 'fpm env --shell powershell' first",
+                    "FPY_MULTISHELL_PATH is not set — run 'fpy env --shell powershell' first — run 'fpm env --shell powershell' first",
                 ))
             })?;
             let cwd = std::env::current_dir()
@@ -163,7 +163,7 @@ fn dispatch(cli: Cli) -> Result<i32, FpmError> {
         Some(Commands::Env { shell, use_on_cd }) => match shell {
             ShellKind::Powershell => {
                 let ctx = commands::CommandContext::from_env()?;
-                let script = commands::env_cmd::run(&ctx.fpm_dir, use_on_cd)?;
+                let script = commands::env_cmd::run(&ctx.fpy_dir, use_on_cd)?;
                 print!("{}", script);
                 Ok(0)
             }

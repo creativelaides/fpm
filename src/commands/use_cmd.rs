@@ -95,12 +95,12 @@ pub fn run<M: PyManagerOps>(
 /// inside an fpm-integrated shell).
 #[allow(dead_code)]
 pub fn session_dir_from_env() -> Result<PathBuf, FpmError> {
-    std::env::var_os(config::FPM_MULTISHELL_PATH_ENV)
+    std::env::var_os(config::FPY_MULTISHELL_PATH_ENV)
         .map(PathBuf::from)
         .ok_or_else(|| {
             FpmError::ShimError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                "FPM_MULTISHELL_PATH is not set — run 'fpm env --shell powershell' first",
+                "FPY_MULTISHELL_PATH is not set — run 'fpy env --shell powershell' first — run 'fpm env --shell powershell' first",
             ))
         })
 }
@@ -140,15 +140,15 @@ mod tests {
     #[test]
     fn use_with_explicit_version_resolves_and_retargets() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
         // Create a session dir (as fpm env would).
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         // Remove it so retarget can create the junction.
         fs::remove_dir(&session_dir).unwrap();
 
         // Create a fake install dir.
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
 
         // Build runtimes pointing at the fake install dir.
         let runtimes = vec![Runtime {
@@ -160,9 +160,9 @@ mod tests {
         // Create the python.exe file so parent() resolves.
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
-        let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(runtimes, fpy_dir.join("pymanager.json"));
 
-        let res = run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
+        let res = run(&mut mock, Some("3.14-64"), false, fpy_dir, &session_dir).unwrap();
         assert!(res.is_some());
 
         // Verify the junction points to the install dir.
@@ -174,14 +174,14 @@ mod tests {
     #[test]
     fn use_version_not_installed_returns_error() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
-        let mut mock = MockPyManager::new(canned_runtimes(), fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(canned_runtimes(), fpy_dir.join("pymanager.json"));
 
-        let err = run(&mut mock, Some("9.9"), false, fpm_dir, &session_dir).unwrap_err();
+        let err = run(&mut mock, Some("9.9"), false, fpy_dir, &session_dir).unwrap_err();
         assert!(matches!(err, FpmError::VersionNotInstalled { .. }));
         assert_eq!(err.exit_code(), 2);
     }
@@ -189,15 +189,15 @@ mod tests {
     #[test]
     fn use_no_version_no_file_returns_no_version_file_error() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
         // No version file in the temp dir tree.
-        let mut mock = MockPyManager::new(canned_runtimes(), fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(canned_runtimes(), fpy_dir.join("pymanager.json"));
 
-        let err = run(&mut mock, None, false, fpm_dir, &session_dir).unwrap_err();
+        let err = run(&mut mock, None, false, fpy_dir, &session_dir).unwrap_err();
         assert!(matches!(err, FpmError::NoVersionFile));
         assert_eq!(err.exit_code(), 3);
     }
@@ -205,23 +205,23 @@ mod tests {
     #[test]
     fn use_no_version_resolves_from_python_version_file() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
         // Write .python-version in cwd.
-        fs::write(fpm_dir.join(".python-version"), "3.13-64\n").unwrap();
+        fs::write(fpy_dir.join(".python-version"), "3.13-64\n").unwrap();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
         // Create a fake install dir for 3.13.
-        let install_dir = make_install_dir(fpm_dir, "install_313");
+        let install_dir = make_install_dir(fpy_dir, "install_313");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![
             Runtime {
                 tag: "3.14-64".to_string(),
                 version: "3.14.6".to_string(),
-                executable: make_install_dir(fpm_dir, "install_314").join("python.exe"),
+                executable: make_install_dir(fpy_dir, "install_314").join("python.exe"),
                 is_default: true,
             },
             Runtime {
@@ -232,11 +232,11 @@ mod tests {
             },
         ];
         // Create python.exe for the 3.14 install too.
-        fs::write(fpm_dir.join("install_314").join("python.exe"), "fake").unwrap();
+        fs::write(fpy_dir.join("install_314").join("python.exe"), "fake").unwrap();
 
-        let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(runtimes, fpy_dir.join("pymanager.json"));
 
-        let res = run(&mut mock, None, false, fpm_dir, &session_dir).unwrap();
+        let res = run(&mut mock, None, false, fpy_dir, &session_dir).unwrap();
         assert!(res.is_some());
 
         // Verify the junction points to 3.13.
@@ -248,13 +248,13 @@ mod tests {
     #[test]
     fn use_silent_if_unchanged_suppresses_when_already_active() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
         // Create install dir and retarget to it first.
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -264,28 +264,28 @@ mod tests {
             is_default: true,
         }];
 
-        let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(runtimes, fpy_dir.join("pymanager.json"));
 
         // First, set the junction to 3.14.
-        run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
+        run(&mut mock, Some("3.14-64"), false, fpy_dir, &session_dir).unwrap();
 
         // Now run with --silent-if-unchanged for the same version.
-        let res = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
+        let res = run(&mut mock, Some("3.14-64"), true, fpy_dir, &session_dir).unwrap();
         assert!(res.is_none());
     }
 
     #[test]
     fn use_silent_if_unchanged_switches_when_different() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
         // Create two install dirs.
-        let install_313 = make_install_dir(fpm_dir, "install_313");
+        let install_313 = make_install_dir(fpy_dir, "install_313");
         fs::write(install_313.join("python.exe"), "fake").unwrap();
-        let install_314 = make_install_dir(fpm_dir, "install_314");
+        let install_314 = make_install_dir(fpy_dir, "install_314");
         fs::write(install_314.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![
@@ -303,13 +303,13 @@ mod tests {
             },
         ];
 
-        let mut mock = MockPyManager::new(runtimes, fpm_dir.join("pymanager.json"));
+        let mut mock = MockPyManager::new(runtimes, fpy_dir.join("pymanager.json"));
 
         // First switch to 3.13.
-        run(&mut mock, Some("3.13-64"), false, fpm_dir, &session_dir).unwrap();
+        run(&mut mock, Some("3.13-64"), false, fpy_dir, &session_dir).unwrap();
 
         // Now run silent-if-unchanged for 3.14 (different) — should switch.
-        let res = run(&mut mock, Some("3.14-64"), true, fpm_dir, &session_dir).unwrap();
+        let res = run(&mut mock, Some("3.14-64"), true, fpy_dir, &session_dir).unwrap();
         assert!(res.is_some());
 
         // Verify junction now points to 3.14.
@@ -321,15 +321,15 @@ mod tests {
     #[test]
     fn use_does_not_write_pymanager_json() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let config_path = fpm_dir.join("pymanager.json");
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(&config_path, r#"{"default_tag": "3.12", "other_key": 99}"#).unwrap();
 
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
 
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -341,7 +341,7 @@ mod tests {
 
         let mut mock = MockPyManager::new(runtimes, config_path.clone());
 
-        run(&mut mock, Some("3.14-64"), false, fpm_dir, &session_dir).unwrap();
+        run(&mut mock, Some("3.14-64"), false, fpy_dir, &session_dir).unwrap();
 
         // pymanager.json should be unchanged.
         let raw = fs::read_to_string(&config_path).unwrap();
@@ -360,16 +360,16 @@ mod tests {
         let session = temp.path().join("test_session");
         fs::create_dir_all(&session).unwrap();
 
-        std::env::set_var(config::FPM_MULTISHELL_PATH_ENV, &session);
+        std::env::set_var(config::FPY_MULTISHELL_PATH_ENV, &session);
         let result = session_dir_from_env().unwrap();
         assert_eq!(result, session);
-        std::env::remove_var(config::FPM_MULTISHELL_PATH_ENV);
+        std::env::remove_var(config::FPY_MULTISHELL_PATH_ENV);
     }
 
     #[test]
     fn session_dir_from_env_errors_when_unset() {
         let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
-        std::env::remove_var(config::FPM_MULTISHELL_PATH_ENV);
+        std::env::remove_var(config::FPY_MULTISHELL_PATH_ENV);
         let err = session_dir_from_env().unwrap_err();
         assert!(matches!(err, FpmError::ShimError(_)));
     }

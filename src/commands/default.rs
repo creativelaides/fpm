@@ -126,7 +126,7 @@ fn run_set<M: PyManagerOps>(
     let session_dir = session_dir.ok_or_else(|| {
         FpmError::ShimError(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "FPM_MULTISHELL_PATH is not set — run 'fpm env --shell powershell' first",
+            "FPY_MULTISHELL_PATH is not set — run 'fpy env --shell powershell' first — run 'fpm env --shell powershell' first",
         ))
     })?;
 
@@ -180,8 +180,8 @@ mod tests {
     }
 
     /// Builds a session dir and removes it so retarget can place a junction.
-    fn make_session_dir(fpm_dir: &Path) -> PathBuf {
-        let session_dir = shim::create_session_dir(fpm_dir).unwrap();
+    fn make_session_dir(fpy_dir: &Path) -> PathBuf {
+        let session_dir = shim::create_session_dir(fpy_dir).unwrap();
         fs::remove_dir(&session_dir).unwrap();
         session_dir
     }
@@ -216,16 +216,16 @@ mod tests {
     fn default_set_writes_default_tag_and_activates_session() {
         let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(
             &config_path,
             r#"{"default_tag": "3.13", "install_dir": "C:\\py"}"#,
         )
         .unwrap();
 
-        let session_dir = make_session_dir(fpm_dir);
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let session_dir = make_session_dir(fpy_dir);
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -271,11 +271,11 @@ mod tests {
     fn default_set_creates_file_when_missing() {
         let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
 
-        let session_dir = make_session_dir(fpm_dir);
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let session_dir = make_session_dir(fpy_dir);
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -306,11 +306,11 @@ mod tests {
     #[test]
     fn default_set_uninstalled_tag_returns_error_before_write() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(&config_path, r#"{"default_tag": "3.13", "other": 42}"#).unwrap();
 
-        let session_dir = make_session_dir(fpm_dir);
+        let session_dir = make_session_dir(fpy_dir);
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());
 
@@ -328,8 +328,8 @@ mod tests {
     #[test]
     fn default_set_without_session_dir_returns_error_before_write() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(&config_path, r#"{"default_tag": "3.13", "other": 42}"#).unwrap();
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());
@@ -349,16 +349,16 @@ mod tests {
     #[test]
     fn default_set_partial_failure_returns_shim_error() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
 
         // session_dir points at a path whose parent is a FILE (not a dir), so
         // retarget will fail after the write succeeds.
-        let blocker_file = fpm_dir.join("blocker.txt");
+        let blocker_file = fpy_dir.join("blocker.txt");
         fs::write(&blocker_file, "not a dir").unwrap();
         let invalid_session_dir = blocker_file.join("session");
 
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -446,11 +446,11 @@ mod tests {
     fn default_dry_run_valid_tag_prints_preview_without_side_effects() {
         let _lock = crate::config::tests::ENV_MUTEX.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(&config_path, r#"{"default_tag": "3.13"}"#).unwrap();
 
-        let install_dir = make_install_dir(fpm_dir, "install_314");
+        let install_dir = make_install_dir(fpy_dir, "install_314");
         fs::write(install_dir.join("python.exe"), "fake").unwrap();
 
         let runtimes = vec![Runtime {
@@ -488,8 +488,8 @@ mod tests {
     #[test]
     fn default_dry_run_uninstalled_tag_returns_error() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
-        let config_path = fpm_dir.join("pymanager.json");
+        let fpy_dir = temp.path();
+        let config_path = fpy_dir.join("pymanager.json");
         fs::write(&config_path, r#"{"default_tag": "3.13"}"#).unwrap();
 
         let mut mock = MockPyManager::new(canned_runtimes(), config_path.clone());

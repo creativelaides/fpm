@@ -19,12 +19,12 @@ fn env_powershell_emits_expected_env_vars() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success()
-        .stdout(contains("$env:FPM_DIR"))
-        .stdout(contains("$env:FPM_MULTISHELL_PATH"))
+        .stdout(contains("$env:FPY_DIR"))
+        .stdout(contains("$env:FPY_MULTISHELL_PATH"))
         .stdout(contains("$env:PATH"));
 }
 
@@ -36,7 +36,7 @@ fn env_powershell_prepends_session_dir_to_path() {
     // The PATH prepend should reference the multishells session directory.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success()
@@ -51,7 +51,7 @@ fn env_powershell_creates_session_directory() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success();
@@ -80,7 +80,7 @@ fn env_powershell_emits_cleanup_hook() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success()
@@ -97,7 +97,7 @@ fn env_powershell_use_on_cd_emits_set_location_hook() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell", "--use-on-cd"])
         .assert()
         .success()
@@ -113,7 +113,7 @@ fn env_powershell_use_on_cd_still_has_cleanup_hook() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell", "--use-on-cd"])
         .assert()
         .success()
@@ -127,7 +127,7 @@ fn env_powershell_without_use_on_cd_omits_set_location_hook() {
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success()
@@ -146,14 +146,14 @@ fn env_creates_unique_session_each_invocation() {
     // Run fpm env twice — each should create a distinct session directory.
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success();
 
     Command::cargo_bin("fpy")
         .unwrap()
-        .env("FPM_DIR", temp_path)
+        .env("FPY_DIR", temp_path)
         .args(["env", "--shell", "powershell"])
         .assert()
         .success();

@@ -1,4 +1,7 @@
 <div align="center">
+<div style="display: inline-block; border-radius: 50%; overflow: hidden; width: 200px; height: 200px;">
+  <img src="assets/fpy_logo_python.png" width="200" height="200" alt="fpy — Friendly Python" />
+</div>
 
 # fpy (Friendly Python)
 
@@ -11,14 +14,6 @@ version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/creativelaides/fpy/ci.yml?style=flat-square&label=CI)](https://github.com/creativelaides/fpy/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/creativelaides/fpy?style=flat-square&label=Release)](https://github.com/creativelaides/fpy/releases/latest)
-
-<br>
-
-<div style="display: inline-block; border-radius: 50%; overflow: hidden; width: 125px; height: 125px;">
-  <img src="assets/kwak_logo_sponsor.jpg" width="125" height="125" alt="KWAK — Kit for Windows Application Kickstart" />
-</div>
-
-<sub>Part of <strong>KWAK</strong> — <em>Kit for Windows Application Kickstart</em></sub>
 
 </div>
 
@@ -38,7 +33,7 @@ version switching, inspired by [fnm](https://github.com/Schniz/fnm).
 - **Pass-through to `py`**: Any unrecognized command forwards verbatim to
   `py.exe`, so existing aliases and workflows keep working.
 - **Shell integration**: Generates a PowerShell script that sets up
-  `FPM_DIR`, `FPM_MULTISHELL_PATH`, and PATH — with optional `use-on-cd`
+  `FPY_DIR`, `FPY_MULTISHELL_PATH`, and PATH — with optional `use-on-cd`
   automatic switching.
 
 ## Installation
@@ -79,7 +74,7 @@ fpy env --use-on-cd --shell powershell | Out-String | Invoke-Expression
 ```
 
 This evaluates the `fpy env` script every time a new shell starts, setting up
-`FPM_DIR`, prepending the session shim directory to `PATH`, and installing
+`FPY_DIR`, prepending the session shim directory to `PATH`, and installing
 the `Set-Location` hook for automatic version switching on `cd`.
 
 #### Profile locations
@@ -180,16 +175,16 @@ fpy use
 
 ## Configuration
 
-### FPM_DIR
+### FPY_DIR
 
 The fpy data directory. Defaults to `%LocalAppData%\fpy`. Override with the
-`FPM_DIR` environment variable:
+`FPY_DIR` environment variable:
 
 ```powershell
-$env:FPM_DIR = "D:\my-fpy-data"
+$env:FPY_DIR = "D:\my-fpy-data"
 ```
 
-Session shim directories are created under `FPM_DIR/multishells/<session-id>/`.
+Session shim directories are created under `FPY_DIR/multishells/<session-id>/`.
 
 ### PYTHON_MANAGER_DEFAULT
 
@@ -205,7 +200,7 @@ session-only.
 ## Session directory lifecycle
 
 Each `fpy env` invocation creates a unique session directory under
-`FPM_DIR/multishells/<pid>_<random>/`. The generated PowerShell script
+`FPY_DIR/multishells/<pid>_<random>/`. The generated PowerShell script
 registers a `PowerShell.Exiting` engine event that best-effort removes the
 session directory on clean shell exit.
 
@@ -214,7 +209,7 @@ unique session ID prevents collisions. You can safely clean up stale
 directories manually:
 
 ```powershell
-Remove-Item -Recurse -Force "$env:FPM_DIR\multishells\*"
+Remove-Item -Recurse -Force "$env:FPY_DIR\multishells\*"
 ```
 
 ## Contributing
@@ -237,3 +232,13 @@ pnpm changeset
 ## License
 
 MIT
+
+---
+
+<div align="center">
+<div style="display: inline-block; border-radius: 50%; overflow: hidden; width: 80px; height: 80px;">
+  <img src="assets/kwak_logo_sponsor.jpg" width="80" height="80" alt="KWAK — Kit for Windows Application Kickstart" />
+</div>
+
+<sub>Part of <strong>KWAK</strong> — <em>Kit for Windows Application Kickstart</em></sub>
+</div>

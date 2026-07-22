@@ -17,9 +17,9 @@ use crate::shim;
 ///
 /// Creates a session directory and renders the PowerShell integration script
 /// to stdout. `use_on_cd` controls whether the Set-Location hook is emitted.
-pub fn run(fpm_dir: &Path, use_on_cd: bool) -> Result<String, FpmError> {
+pub fn run(fpy_dir: &Path, use_on_cd: bool) -> Result<String, FpmError> {
     // Create the per-session multishell directory.
-    let session_dir = shim::create_session_dir(fpm_dir)?;
+    let session_dir = shim::create_session_dir(fpy_dir)?;
 
     // Render the PowerShell integration script.
     let ps = PowerShell::new();
@@ -35,13 +35,13 @@ mod tests {
     #[test]
     fn env_creates_session_dir_and_emits_script() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let script = run(fpm_dir, false).unwrap();
+        let script = run(fpy_dir, false).unwrap();
         assert!(!script.is_empty());
 
         // Verify a session dir was created under multishells/.
-        let multishells = fpm_dir.join("multishells");
+        let multishells = fpy_dir.join("multishells");
         assert!(multishells.exists(), "multishells dir should be created");
 
         // At least one session subdir should exist.
@@ -55,36 +55,36 @@ mod tests {
     #[test]
     fn env_emits_fpm_dir_in_script() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
         // Capture stdout would require a capture harness; instead verify
         // the session dir was created (script content is tested in
         // shell::powershell::tests).
-        let script = run(fpm_dir, false).unwrap();
+        let script = run(fpy_dir, false).unwrap();
         assert!(!script.is_empty());
     }
 
     #[test]
     fn env_with_use_on_cd_creates_session() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        let script = run(fpm_dir, true).unwrap();
+        let script = run(fpy_dir, true).unwrap();
         assert!(!script.is_empty());
 
-        let multishells = fpm_dir.join("multishells");
+        let multishells = fpy_dir.join("multishells");
         assert!(multishells.exists());
     }
 
     #[test]
     fn env_creates_unique_session_each_call() {
         let temp = tempfile::tempdir().unwrap();
-        let fpm_dir = temp.path();
+        let fpy_dir = temp.path();
 
-        run(fpm_dir, false).unwrap();
-        run(fpm_dir, false).unwrap();
+        run(fpy_dir, false).unwrap();
+        run(fpy_dir, false).unwrap();
 
-        let multishells = fpm_dir.join("multishells");
+        let multishells = fpy_dir.join("multishells");
         let sessions: Vec<_> = std::fs::read_dir(&multishells).unwrap().collect();
         assert_eq!(
             sessions.len(),
