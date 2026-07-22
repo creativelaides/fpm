@@ -102,7 +102,7 @@ fn env_powershell_use_on_cd_emits_set_location_hook() {
         .assert()
         .success()
         .stdout(contains("function global:Set-Location"))
-        .stdout(contains("fpm use --silent-if-unchanged"))
+        .stdout(contains("fpy use --silent-if-unchanged"))
         .stdout(contains(".python-version"));
 }
 

@@ -82,8 +82,8 @@ impl Shell for PowerShell {
 /// invoke `fpm use --silent-if-unchanged`.
 fn use_on_cd_hook() -> String {
     r#"
-# fpm use-on-cd: override Set-Location to auto-switch Python on dir change
-$__fpmOriginalSetLocation = Get-Command Set-Location -CommandType Function
+# fpy use-on-cd: override Set-Location to auto-switch Python on dir change
+$__fpyOriginalSetLocation = Get-Command Set-Location
 function global:Set-Location {
     param(
         [Parameter(ValueFromPipeline = $true, Position = 0)]
@@ -93,11 +93,11 @@ function global:Set-Location {
     )
     end {
         if ($Path) {
-            & $__fpmOriginalSetLocation $Path
+            & $__fpyOriginalSetLocation $Path
         } elseif ($LiteralPath) {
-            & $__fpmOriginalSetLocation -LiteralPath $LiteralPath
+            & $__fpyOriginalSetLocation -LiteralPath $LiteralPath
         } else {
-            & $__fpmOriginalSetLocation
+            & $__fpyOriginalSetLocation
         }
 
         # After changing directory, check for a version file.
