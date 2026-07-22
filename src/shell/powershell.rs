@@ -102,13 +102,12 @@ function global:Set-Location {
 
         # After changing directory, check for a version file.
         # Walk upward from the new cwd looking for .python-version or
-        # pyproject.toml. fpm use does the real resolution; we just gate on
-        # file presence to avoid spawning fpm on every cd.
+        # pyproject.toml. fpy use does the real resolution; we just gate on
+        # file presence to avoid spawning fpy on every cd.
         $dir = Get-Location
         while ($dir) {
-            if (Test-Path (Join-Path $dir '.python-version') -or
-                Test-Path (Join-Path $dir 'pyproject.toml')) {
-                fpm use --silent-if-unchanged 2>$null
+            if ((Test-Path (Join-Path $dir '.python-version')) -or (Test-Path (Join-Path $dir 'pyproject.toml'))) {
+                fpy use --silent-if-unchanged 2>$null
                 break
             }
             $parent = Split-Path $dir -Parent
@@ -131,11 +130,11 @@ fn exit_cleanup_hook(session_dir: &Path) -> String {
     let session_str = session_dir.display();
     format!(
         r#"
-# fpm cleanup: remove session directory on shell exit (best-effort)
-$global:__FpmSessionDir = "{session_str}"
-$global:__FpmCleanup = Register-EngineEvent PowerShell.Exiting -Action {{
-    if ($global:__FpmSessionDir -and (Test-Path $global:__FpmSessionDir)) {{
-        Remove-Item -LiteralPath $global:__FpmSessionDir -Force -ErrorAction SilentlyContinue
+# fpy cleanup: remove session directory on shell exit (best-effort)
+$global:__FpySessionDir = "{session_str}"
+$global:__FpyCleanup = Register-EngineEvent PowerShell.Exiting -Action {{
+    if ($global:__FpySessionDir -and (Test-Path $global:__FpySessionDir)) {{
+        Remove-Item -LiteralPath $global:__FpySessionDir -Force -ErrorAction SilentlyContinue
     }}
 }}
 "#
@@ -210,8 +209,8 @@ mod tests {
             "use-on-cd should emit a Set-Location override, got:\n{out}"
         );
         assert!(
-            out.contains("fpm use --silent-if-unchanged"),
-            "use-on-cd hook should invoke fpm use --silent-if-unchanged, got:\n{out}"
+            out.contains("fpy use --silent-if-unchanged"),
+            "use-on-cd hook should invoke fpy use --silent-if-unchanged, got:\n{out}"
         );
         assert!(
             out.contains(".python-version"),
